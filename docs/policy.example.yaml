@@ -1,0 +1,25 @@
+# rexec-agentd destructive-op policy — copy to <data-dir>/policy.yaml.
+#
+# This is the agent-side half of the destructive-op gate. The authz layer has
+# already confirmed the caller holds rex:admin before this is consulted; the
+# policy then decides whether a Deploy command runs, is denied, or needs live
+# human approval. A missing policy.yaml defaults to `deny` (safest).
+
+# How destructive commands (Deploy RPC) are handled:
+#   deny  — never run any destructive command (default)
+#   allow — run destructive commands (restricted to `allow` list if set)
+#   ask   — require one-time live approval, unless the command is in `allow`
+destructive: ask
+
+# In `allow` mode: the ONLY commands permitted (empty = all).
+# In `ask`   mode: commands PRE-APPROVED (skip the approval prompt).
+allow:
+  - go
+  - task
+  - docker
+
+# Always denied — wins over everything above.
+deny:
+  - rm
+  - rmdir
+  - mkfs

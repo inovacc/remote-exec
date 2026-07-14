@@ -334,11 +334,15 @@ func (x *InfoResponse) GetVersion() string {
 }
 
 type ExecRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Command       string                 `protobuf:"bytes,1,opt,name=command,proto3" json:"command,omitempty"`
-	Args          []string               `protobuf:"bytes,2,rep,name=args,proto3" json:"args,omitempty"`
-	WorkingDir    string                 `protobuf:"bytes,3,opt,name=working_dir,json=workingDir,proto3" json:"working_dir,omitempty"`
-	Env           map[string]string      `protobuf:"bytes,4,rep,name=env,proto3" json:"env,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	state      protoimpl.MessageState `protogen:"open.v1"`
+	Command    string                 `protobuf:"bytes,1,opt,name=command,proto3" json:"command,omitempty"`
+	Args       []string               `protobuf:"bytes,2,rep,name=args,proto3" json:"args,omitempty"`
+	WorkingDir string                 `protobuf:"bytes,3,opt,name=working_dir,json=workingDir,proto3" json:"working_dir,omitempty"`
+	Env        map[string]string      `protobuf:"bytes,4,rep,name=env,proto3" json:"env,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	// approval_id echoes a prior ApprovalRequest.approval_id to authorize a
+	// destructive Deploy that the agent policy gated with "ask". Empty on the
+	// first call.
+	ApprovalId    string `protobuf:"bytes,5,opt,name=approval_id,json=approvalId,proto3" json:"approval_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -399,6 +403,13 @@ func (x *ExecRequest) GetEnv() map[string]string {
 		return x.Env
 	}
 	return nil
+}
+
+func (x *ExecRequest) GetApprovalId() string {
+	if x != nil {
+		return x.ApprovalId
+	}
+	return ""
 }
 
 // ExecChunk is one streamed unit of a running command: a slice of stdout or
@@ -600,13 +611,15 @@ const file_rexec_v1_agent_proto_rawDesc = "" +
 	"\x02os\x18\x01 \x01(\tR\x02os\x12\x12\n" +
 	"\x04arch\x18\x02 \x01(\tR\x04arch\x12\x1a\n" +
 	"\bhostname\x18\x03 \x01(\tR\bhostname\x12\x18\n" +
-	"\aversion\x18\x04 \x01(\tR\aversion\"\xc6\x01\n" +
+	"\aversion\x18\x04 \x01(\tR\aversion\"\xe7\x01\n" +
 	"\vExecRequest\x12\x18\n" +
 	"\acommand\x18\x01 \x01(\tR\acommand\x12\x12\n" +
 	"\x04args\x18\x02 \x03(\tR\x04args\x12\x1f\n" +
 	"\vworking_dir\x18\x03 \x01(\tR\n" +
 	"workingDir\x120\n" +
-	"\x03env\x18\x04 \x03(\v2\x1e.rexec.v1.ExecRequest.EnvEntryR\x03env\x1a6\n" +
+	"\x03env\x18\x04 \x03(\v2\x1e.rexec.v1.ExecRequest.EnvEntryR\x03env\x12\x1f\n" +
+	"\vapproval_id\x18\x05 \x01(\tR\n" +
+	"approvalId\x1a6\n" +
 	"\bEnvEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xa9\x01\n" +

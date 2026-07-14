@@ -62,6 +62,10 @@ message ExecRequest {
   repeated string args = 2;
   string working_dir = 3;
   map<string, string> env = 4;
+  // approval_id echoes a prior ApprovalRequest.approval_id to authorize a
+  // destructive Deploy that the agent policy gated with "ask". Empty on the
+  // first call.
+  string approval_id = 5;
 }
 
 // ExecChunk is one streamed unit of a running command: a slice of stdout or

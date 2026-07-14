@@ -25,6 +25,7 @@ import (
 	"github.com/inovacc/remote-exec/internal/clientconfig"
 	"github.com/inovacc/remote-exec/internal/enroll"
 	"github.com/inovacc/remote-exec/internal/pki"
+	"github.com/inovacc/remote-exec/internal/policy"
 	rexecv1 "github.com/inovacc/remote-exec/internal/proto/rexec/v1"
 	"github.com/inovacc/remote-exec/internal/token"
 	"github.com/inovacc/remote-exec/internal/transport"
@@ -52,6 +53,10 @@ func mintServerCert(t *testing.T, ca *pki.CA) (certPEM, keyPEM []byte) {
 }
 
 func startAgent(t *testing.T, table authz.Table) *harness {
+	return startAgentPolicy(t, table, policy.Policy{Destructive: policy.ModeAllow})
+}
+
+func startAgentPolicy(t *testing.T, table authz.Table, pol policy.Policy) *harness {
 	t.Helper()
 	ca, err := pki.NewCA("agent-ca", pki.DefaultCAValidity)
 	require.NoError(t, err)
@@ -61,7 +66,7 @@ func startAgent(t *testing.T, table authz.Table) *harness {
 	fp, err := pki.FingerprintPEM(serverCertPEM)
 	require.NoError(t, err)
 	svc := enroll.NewService(ca, serverCertPEM, "agent-xyz", tokens, pki.DefaultLeafValidity)
-	agent := agentserver.New(svc, "agent-xyz", fp, "testhost", "v-test")
+	agent := agentserver.New(svc, "agent-xyz", fp, "testhost", "v-test", pol, policy.NewGrants())
 
 	creds, err := transport.ServerCreds(ca.CertPEM(), serverCertPEM, serverKeyPEM)
 	require.NoError(t, err)
@@ -206,6 +211,92 @@ func TestExec_ReaderRefused(t *testing.T) {
 	require.NoError(t, err)
 	_, err = stream.Recv()
 	require.Equal(t, codes.PermissionDenied, status.Code(err), "reader must be refused Exec")
+}
+
+type deployResult struct {
+	stdout   string
+	exit     int
+	gotExit  bool
+	approval *rexecv1.ApprovalRequest
+}
+
+func deploy(t *testing.T, client rexecv1.AgentClient, approvalID string) (deployResult, error) {
+	t.Helper()
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+	stream, err := client.Deploy(ctx, &rexecv1.ExecRequest{
+		Command:    os.Args[0],
+		Args:       []string{"-test.run=TestHelperProcess"},
+		Env:        map[string]string{"REXEC_HELPER": "1"},
+		ApprovalId: approvalID,
+	})
+	require.NoError(t, err)
+
+	var res deployResult
+	var out bytes.Buffer
+	for {
+		chunk, recvErr := stream.Recv()
+		if errors.Is(recvErr, io.EOF) {
+			break
+		}
+		if recvErr != nil {
+			return res, recvErr
+		}
+		switch m := chunk.GetMsg().(type) {
+		case *rexecv1.ExecChunk_Stdout:
+			out.Write(m.Stdout)
+		case *rexecv1.ExecChunk_ExitCode:
+			res.gotExit, res.exit = true, int(m.ExitCode)
+		case *rexecv1.ExecChunk_NeedsApproval:
+			res.approval = m.NeedsApproval
+		}
+	}
+	res.stdout = out.String()
+	return res, nil
+}
+
+func TestDeploy_PolicyAllow_Runs(t *testing.T) {
+	h := startAgentPolicy(t, authz.AgentTable, policy.Policy{Destructive: policy.ModeAllow})
+	client := h.mtlsClient(t, h.enroll(t, authz.RoleAdmin))
+
+	res, err := deploy(t, client, "")
+	require.NoError(t, err)
+	require.True(t, res.gotExit)
+	require.Equal(t, 0, res.exit)
+	require.Contains(t, res.stdout, "ok-out")
+	require.Nil(t, res.approval)
+}
+
+func TestDeploy_PolicyDeny_Refused(t *testing.T) {
+	h := startAgentPolicy(t, authz.AgentTable, policy.Policy{Destructive: policy.ModeDeny})
+	client := h.mtlsClient(t, h.enroll(t, authz.RoleAdmin))
+
+	_, err := deploy(t, client, "")
+	require.Equal(t, codes.PermissionDenied, status.Code(err), "admin still blocked by agent policy")
+}
+
+func TestDeploy_PolicyAsk_ApprovalRoundTrip(t *testing.T) {
+	h := startAgentPolicy(t, authz.AgentTable, policy.Policy{Destructive: policy.ModeAsk})
+	client := h.mtlsClient(t, h.enroll(t, authz.RoleAdmin))
+
+	// First call: policy says "ask" — the agent must NOT run, only request approval.
+	res1, err := deploy(t, client, "")
+	require.NoError(t, err)
+	require.NotNil(t, res1.approval)
+	require.NotEmpty(t, res1.approval.GetApprovalId())
+	require.False(t, res1.gotExit, "must not execute before approval")
+	require.NotContains(t, res1.stdout, "ok-out")
+
+	// Second call: with the approval id, it runs.
+	res2, err := deploy(t, client, res1.approval.GetApprovalId())
+	require.NoError(t, err)
+	require.True(t, res2.gotExit)
+	require.Equal(t, 0, res2.exit)
+	require.Contains(t, res2.stdout, "ok-out")
+
+	// Reusing the approval id is rejected (single-use).
+	_, err = deploy(t, client, res1.approval.GetApprovalId())
+	require.Equal(t, codes.PermissionDenied, status.Code(err))
 }
 
 func TestNoClientCert_RefusedProtectedMethod(t *testing.T) {

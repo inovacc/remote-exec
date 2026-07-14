@@ -16,6 +16,7 @@ import (
 	"github.com/inovacc/remote-exec/internal/enroll"
 	"github.com/inovacc/remote-exec/internal/identity"
 	"github.com/inovacc/remote-exec/internal/pki"
+	"github.com/inovacc/remote-exec/internal/policy"
 	"github.com/inovacc/remote-exec/internal/token"
 	"github.com/inovacc/remote-exec/internal/transport"
 )
@@ -29,6 +30,7 @@ func (d dataLayout) serverCert() string { return filepath.Join(d.dir, "server.cr
 func (d dataLayout) serverKey() string  { return filepath.Join(d.dir, "server.key") }
 func (d dataLayout) agentID() string    { return filepath.Join(d.dir, "agent.id") }
 func (d dataLayout) tokens() string     { return filepath.Join(d.dir, "tokens.json") }
+func (d dataLayout) policy() string     { return filepath.Join(d.dir, "policy.yaml") }
 
 func defaultDataDir() string {
 	base, err := os.UserConfigDir()
@@ -186,8 +188,12 @@ func serveAgent(ctx context.Context, logger *slog.Logger, dir, listen, version s
 
 	tokens := token.NewFileStore(d.tokens())
 	svc := enroll.NewService(ca, serverCert, id, tokens, pki.DefaultLeafValidity)
+	pol, err := policy.Load(d.policy())
+	if err != nil {
+		return err
+	}
 	host, _ := os.Hostname()
-	agent := agentserver.New(svc, id, fp, host, version)
+	agent := agentserver.New(svc, id, fp, host, version, pol, policy.NewGrants())
 
 	creds, err := transport.ServerCreds(caCert, serverCert, serverKey)
 	if err != nil {
@@ -200,7 +206,8 @@ func serveAgent(ctx context.Context, logger *slog.Logger, dir, listen, version s
 		return fmt.Errorf("listen %s: %w", listen, err)
 	}
 	logger.InfoContext(ctx, "rexec-agentd serving mTLS gRPC",
-		slog.String("listen", listen), slog.String("agent_id", id), slog.String("fingerprint", fp))
+		slog.String("listen", listen), slog.String("agent_id", id),
+		slog.String("fingerprint", fp), slog.String("destructive_policy", string(pol.Destructive)))
 
 	errCh := make(chan error, 1)
 	go func() { errCh <- srv.Serve(lis) }()

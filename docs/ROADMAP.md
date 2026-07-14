@@ -1,7 +1,7 @@
 # Roadmap
 
 ## Current Status
-**Overall Progress:** ~45% — P0–P3 done. Secure channel + live streaming remote execution work: an operator streamed `go version` off a remote agent while a reader was refused `Exec` at the transport. Next: P4 destructive-op gate (agent policy + `NeedsApproval`).
+**Overall Progress:** ~58% — P0–P4 done. The full security story is live end-to-end: token-bootstrapped mTLS enrollment, cert-role authz, streaming remote exec, and the **destructive-op gate** (admin role → agent policy → single-use live approval), all verified cross-process. Next: P5 cross-OS service install.
 
 See `docs/DESIGN.md` for the full architecture and `docs/research/TALOS-SECURE-COMMS.md` for the security derivation.
 
@@ -40,10 +40,14 @@ See `docs/DESIGN.md` for the full architecture and `docs/research/TALOS-SECURE-C
 - [x] cross-process smoke: operator streamed `go version` off the agent; reader denied
 - [ ] `needs_approval` is defined in the proto but wired in P4 (Deploy currently runs as an admin-gated Exec)
 
-### P4 — Destructive-op gate [NOT STARTED]
-- [ ] Role model `rex:reader ⊂ rex:operator ⊂ rex:admin`
-- [ ] Agent `policy.yaml` (`destructive: deny|allow|ask`, allow-list)
-- [ ] `NeedsApproval` live-approval flow (one-time token)
+### P4 — Destructive-op gate [DONE]
+- [x] `internal/policy`: `Policy` (`destructive: deny|allow|ask`, `allow`/`deny` lists), `Evaluate`, safe-default `Load`; `Grants` (in-memory, single-use, TTL, command-bound approvals)
+- [x] `Deploy` three-stage gate: admin role (authz) → policy Evaluate → run / deny / `NeedsApproval`
+- [x] Approval round-trip via `ExecRequest.approval_id`; single-use, 5-min TTL, command-matched
+- [x] `rexec deploy <cmd>`: prints machine-parseable `APPROVAL_REQUIRED approval_id=…` (for a fleet to surface via `AskUserQuestion`), plus `--approval <id>` and `--yes`
+- [x] `docs/policy.example.yaml`; `rexec-agentd` logs `destructive_policy` on start
+- [x] tests: policy Evaluate matrix + Grants; bufconn Deploy allow/deny/ask + approval round-trip (single-use)
+- [x] cross-process smoke: ask→approve→run, reuse rejected, `--yes` one-shot, deny blocked
 
 ### P5 — Cross-OS service [NOT STARTED]
 - [ ] `kardianos/service` install/uninstall/run on macOS, Linux, Windows
