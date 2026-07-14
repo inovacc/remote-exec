@@ -1,3 +1,5 @@
+// Package platform aggregates the agent's shared infrastructure (currently the
+// SQLite store), constructed at startup and closed on shutdown.
 package platform
 
 import (

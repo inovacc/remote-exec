@@ -1,3 +1,6 @@
+// Command rexec is the remote-exec controller CLI that Claude Code drives: enroll
+// with an agent, ask its identity, and run or deploy commands over the secure
+// mTLS channel.
 package main
 
 import (

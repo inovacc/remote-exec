@@ -5,6 +5,22 @@
 
 See `docs/DESIGN.md` for the full architecture and `docs/research/TALOS-SECURE-COMMS.md` for the security derivation.
 
+## Test Coverage (`go test -cover`)
+
+| Package | Coverage | | Package | Coverage |
+|---------|----------|-|---------|----------|
+| internal/execute | 96.8% | | internal/pki | 76.5% |
+| internal/policy | 89.8% | | internal/clientconfig | 70.8% |
+| internal/enroll | 81.8% | | internal/transport | 57.1% |
+| internal/token | 79.3% | | internal/authz | 20.5%¹ |
+| internal/identity | 78.6% | | internal/agentserver | 0.0%¹ |
+
+¹ `authz` interceptors and the whole `agentserver` are exercised through `internal/transport`'s
+bufconn round-trip tests; Go attributes that coverage to `transport`, not to the package under
+test. `cmd/*` CLIs and generated `internal/proto/*` have no in-package unit tests (verified via
+cross-process smoke). Raising direct coverage on `authz`/`agentserver` is tracked as TST-1 in
+`docs/IMPLEMENTATION_TASKS.md`. **Total: 23.9%.**
+
 ## Phases
 
 ### P0 — Scaffold [DONE]

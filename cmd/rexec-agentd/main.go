@@ -1,3 +1,6 @@
+// Command rexec-agentd is the remote-exec agent daemon: it manages the agent CA
+// and join tokens, terminates mTLS, serves the rexec.v1.Agent gRPC API, and
+// enforces the destructive-op policy. It runs as an OS service on mac/linux/windows.
 package main
 
 import (

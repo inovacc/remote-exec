@@ -1,3 +1,4 @@
+// Package db opens the agent's local SQLite store (pure-Go modernc driver).
 package db
 
 import (
