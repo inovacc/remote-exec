@@ -1,7 +1,7 @@
 # Roadmap
 
 ## Current Status
-**Overall Progress:** ~5% — Scaffolded (monorepo: `rexec-agentd` daemon + `rexec` CLI, builds clean). Design + Talos security research committed.
+**Overall Progress:** ~18% — P0 scaffold + P1 PKI/enrollment libraries done (fully tested). Next: P2 mTLS gRPC transport wires the `Enroll` service onto the wire.
 
 See `docs/DESIGN.md` for the full architecture and `docs/research/TALOS-SECURE-COMMS.md` for the security derivation.
 
@@ -12,11 +12,14 @@ See `docs/DESIGN.md` for the full architecture and `docs/research/TALOS-SECURE-C
 - [x] Taskfile, golangci v2, goreleaser, GitHub CI, BSD-3, sqlite platform aggregator
 - [x] `go build ./...` + `go vet ./...` clean
 
-### P1 — PKI + enrollment [NOT STARTED]
-- [ ] `internal/pki`: agent CA mint (Ed25519), CSR sign, leaf rotation, `sha256(cert.Raw)` fingerprint
-- [ ] Join-token issuance (`rexec-agentd token new`) — short-lived, single-use
-- [ ] `Enroll` RPC — agent signs the client CSR only, returns `{cert, caPEM, agentID, fingerprint}`
-- [ ] `talosconfig`-style controller credential `~/.rexec/config.yaml`
+### P1 — PKI + enrollment [DONE — transport-agnostic libraries]
+- [x] `internal/pki`: Ed25519 CA mint, CSR sign (client/server, roles→`O=`), `sha256(cert.Raw)` fingerprint
+- [x] `internal/identity`: stable persisted agent UUID
+- [x] `internal/token`: short-lived, single-use join tokens (file-backed, flock, clock-injectable)
+- [x] `internal/enroll`: enrollment service — signs the client CSR **only**, returns `{cert, caPEM, agentID, fingerprint}`
+- [x] `internal/clientconfig`: `talosconfig`-style credential + mTLS `ClientTLS()`
+- [x] `rexec-agentd ca init` + `rexec-agentd token new` (runnable; verified end-to-end)
+- [ ] The **`Enroll` RPC** itself is P2 (needs the gRPC transport); the service logic above is done and unit-tested. Leaf auto-rotation → BACKLOG.
 
 ### P2 — mTLS transport + interceptors [NOT STARTED]
 - [ ] `internal/transport`: gRPC over TLS 1.3, `RequireAndVerifyClientCert`

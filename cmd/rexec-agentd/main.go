@@ -23,6 +23,10 @@ func main() {
 
 	a := app.New()
 
+	// Standalone admin commands (CA init, token issuance) that run without the
+	// serving runtime. The gRPC Enroll/Exec surface arrives in P2.
+	root.AddCommand(agentCommands()...)
+
 	core := func(ctx context.Context, rt *bootstrap.Runtime) error {
 		plat, err := platform.New(ctx)
 		if err != nil {

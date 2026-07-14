@@ -1,6 +1,15 @@
 /remote-exec
 /remote-exec.exe
+/rexec-agentd
+/rexec-agentd.exe
+/rexec
+/rexec.exe
 *.out
 dist/
 .idea/
 .vscode/
+
+# Runtime artifacts (generated AppID/AppSecret, sqlite state, local agent data)
+/config.yaml
+*.db
+/rexec-agentd-data/
