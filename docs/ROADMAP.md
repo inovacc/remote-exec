@@ -1,7 +1,7 @@
 # Roadmap
 
 ## Current Status
-**Overall Progress:** ~72% — P0–P5 done. Full secure channel + streaming exec + destructive-op gate, plus cross-OS service install. Next: P6 Claude Code surface (skills/commands + fleet subagent).
+**Overall Progress:** v1 complete (P0–P6). Everything the original brief named is working and verified cross-process: cross-OS secure agent, Talos-style mTLS + PKI enrollment, ask-the-instance-for-its-id (fingerprint-pinned), streaming remote build/analyze/deploy, and the destructive-op approval gate — driven from Claude Code via slash commands + a fleet subagent. Only P7 (WireGuard overlay) remains, a documented **v2** stretch.
 
 See `docs/DESIGN.md` for the full architecture and `docs/research/TALOS-SECURE-COMMS.md` for the security derivation.
 
@@ -55,9 +55,11 @@ See `docs/DESIGN.md` for the full architecture and `docs/research/TALOS-SECURE-C
 - [x] `service run` is the manager entrypoint; install records `service run --data-dir --listen` args
 - [x] build/vet clean; command wiring verified (actual install needs admin + mutates the OS, so not run in CI)
 
-### P6 — Claude Code surface [NOT STARTED]
-- [ ] `rexec` skills/commands (`/remote:enroll`, `/remote:id`, `/remote:run`) + fleet subagent
-- [ ] Human-in-the-loop approval wired to `AskUserQuestion`
+### P6 — Claude Code surface [DONE]
+- [x] slash commands: `/remote:enroll`, `/remote:id`, `/remote:run`, `/remote:deploy` (in `.claude/commands/remote/`)
+- [x] `remote-runner` fleet subagent (`.claude/agents/`) — drives one agent end-to-end, one per target host
+- [x] destructive approval wired to `AskUserQuestion` (the `deploy` command/agent consume `APPROVAL_REQUIRED`)
+- [x] `docs/CLAUDE-INTEGRATION.md`: handshake, gate, and cross-OS fleet pattern
 
 ### P7 — v2 WireGuard overlay [DEFERRED — see BACKLOG]
 - [ ] SideroLink-style `wireguard-go` mesh + WG-pubkey second identity
