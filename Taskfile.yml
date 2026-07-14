@@ -1,8 +1,8 @@
 version: "3"
 
 vars:
-  BINARY: remote-exec
-  MAIN: ./cmd/remote-exec
+  BINARY: rexec-agentd
+  MAIN: ./cmd/rexec-agentd
   VERSION:
     sh: git describe --tags --always --dirty 2>/dev/null || echo "dev"
 
@@ -31,6 +31,11 @@ tasks:
     desc: Run go generate
     cmds:
       - go generate ./...
+
+  proto:
+    desc: Generate Go gRPC code from proto/ (requires protoc + protoc-gen-go[-grpc])
+    cmds:
+      - protoc --go_out=internal/proto --go_opt=paths=source_relative --go-grpc_out=internal/proto --go-grpc_opt=paths=source_relative -I proto proto/rexec/v1/agent.proto
 
   fmt:
     desc: Format all Go code
@@ -125,5 +130,5 @@ tasks:
   clean:
     desc: Remove build artifacts
     cmds:
-      - rm -f remote-exec remote-exec.exe coverage.out coverage.html
+      - rm -f rexec-agentd rexec-agentd.exe rexec rexec.exe coverage.out coverage.html
       - rm -rf dist/

@@ -13,3 +13,6 @@ dist/
 /config.yaml
 *.db
 /rexec-agentd-data/
+
+# Ephemeral command-audit scripts
+/.scripts/

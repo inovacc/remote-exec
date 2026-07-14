@@ -1,7 +1,7 @@
 # Roadmap
 
 ## Current Status
-**Overall Progress:** ~18% — P0 scaffold + P1 PKI/enrollment libraries done (fully tested). Next: P2 mTLS gRPC transport wires the `Enroll` service onto the wire.
+**Overall Progress:** ~32% — P0–P2 done. The Talos-style secure channel is live: token-bootstrapped enrollment + mTLS gRPC + cert-role authz, verified cross-process (`agentd serve` → `token new` → `rexec enroll` → `rexec id` with fingerprint pinning; token reuse rejected). Next: P3 `Exec` streaming.
 
 See `docs/DESIGN.md` for the full architecture and `docs/research/TALOS-SECURE-COMMS.md` for the security derivation.
 
@@ -21,9 +21,14 @@ See `docs/DESIGN.md` for the full architecture and `docs/research/TALOS-SECURE-C
 - [x] `rexec-agentd ca init` + `rexec-agentd token new` (runnable; verified end-to-end)
 - [ ] The **`Enroll` RPC** itself is P2 (needs the gRPC transport); the service logic above is done and unit-tested. Leaf auto-rotation → BACKLOG.
 
-### P2 — mTLS transport + interceptors [NOT STARTED]
-- [ ] `internal/transport`: gRPC over TLS 1.3, `RequireAndVerifyClientCert`
-- [ ] `authenticate` (peer cert → identity + role from `O=`) and `authorize` (per-method role table) interceptors
+### P2 — mTLS transport + interceptors [DONE]
+- [x] `internal/proto/rexec/v1`: `Agent` gRPC service (`Enroll`, `Identity`, `Info`) generated via `task proto`
+- [x] `internal/transport`: gRPC over TLS 1.3, `VerifyClientCertIfGiven` (public `Enroll` + protected mTLS on one port); `ServerCreds`/`ClientCreds`/`Dial`/`Enroll`
+- [x] `internal/authz`: role from cert `O=`, per-method `Table`, `UnaryInterceptor` — the destructive-op gate's enforcement point
+- [x] `internal/agentserver`: `Agent` service impl over the enroll service + identity
+- [x] `rexec enroll` / `rexec id` (controller) and `rexec-agentd` serve path
+- [x] bufconn round-trip tests: enroll→Identity over mTLS; **reader cert refused an admin method**; no-cert refused a protected method
+- [x] cross-process smoke verified (see Current Status)
 
 ### P3 — Exec + streaming [NOT STARTED]
 - [ ] `internal/proto` (`rexec.v1`): `Identity`, `Info`, `Exec`, `Deploy`

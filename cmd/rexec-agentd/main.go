@@ -23,9 +23,12 @@ func main() {
 
 	a := app.New()
 
-	// Standalone admin commands (CA init, token issuance) that run without the
-	// serving runtime. The gRPC Enroll/Exec surface arrives in P2.
+	// Standalone admin commands: CA init and token issuance.
 	root.AddCommand(agentCommands()...)
+
+	var dataDir, listen string
+	root.PersistentFlags().StringVar(&dataDir, "data-dir", defaultDataDir(), "agent data directory")
+	root.PersistentFlags().StringVar(&listen, "listen", "127.0.0.1:50000", "mTLS gRPC listen address")
 
 	core := func(ctx context.Context, rt *bootstrap.Runtime) error {
 		plat, err := platform.New(ctx)
@@ -33,9 +36,11 @@ func main() {
 			return err
 		}
 		defer func() { _ = plat.Close(ctx) }()
+
 		rt.Logger.InfoContext(ctx, "rexec-agentd started")
-		// Run until the runtime context is cancelled (signal or service stop).
-		<-ctx.Done()
+		if serveErr := serveAgent(ctx, rt.Logger, dataDir, listen, version); serveErr != nil {
+			return serveErr
+		}
 
 		// The runtime context is already cancelled; use a fresh bounded
 		// context so observability data still flushes on shutdown.

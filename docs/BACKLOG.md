@@ -10,6 +10,10 @@ Deferred / future work, distilled from `docs/DESIGN.md` §7 and the Talos resear
 - **Multi-agent fleet registry.** Controller-side discovery/listing across many enrolled agents
   (reuse the `instances-manager` / corral provider+registry pattern).
 
+## Hardening surfaced during P2
+- **Bootstrap enrollment uses `InsecureSkipVerify`** (`transport.go`). Trust currently rests on the single-use token + pinning the returned fingerprint. Add optional `--expect-fingerprint` to `rexec enroll` so the controller can verify the agent's server cert during bootstrap (out-of-band pin), closing the MITM window.
+- **mantle logs to stdout for CLI subcommands**, so machine-readable output (the join token) had to be written to `os.Stdout` directly. Consider a `--json`/quiet output mode for `token new`, `enroll`, `id` so a Claude Code fleet can parse results without stripping log lines.
+
 ## Tech debt / hardening
 - Reuse **weaver** `internal/identity` + `tlsutil` for cert→agentID rather than re-deriving.
 - Reuse **agentbox** allow-list + read-only credential seed for the exec sandbox.

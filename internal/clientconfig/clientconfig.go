@@ -20,12 +20,12 @@ var ErrIncomplete = errors.New("clientconfig: incomplete credential")
 
 // Config is a single portable controller credential (mirrors talosconfig).
 type Config struct {
-	CA          string   `yaml:"ca"`           // agent CA certificate PEM
-	ClientCert  string   `yaml:"client_cert"`  // controller client certificate PEM
-	ClientKey   string   `yaml:"client_key"`   // controller client key PEM
-	Endpoints   []string `yaml:"endpoints"`    // agent gRPC endpoints
-	AgentID     string   `yaml:"agent_id"`     // pinned agent identity
-	Fingerprint string   `yaml:"fingerprint"`  // pinned agent server-cert fingerprint
+	CA          string   `yaml:"ca"`          // agent CA certificate PEM
+	ClientCert  string   `yaml:"client_cert"` // controller client certificate PEM
+	ClientKey   string   `yaml:"client_key"`  // controller client key PEM
+	Endpoints   []string `yaml:"endpoints"`   // agent gRPC endpoints
+	AgentID     string   `yaml:"agent_id"`    // pinned agent identity
+	Fingerprint string   `yaml:"fingerprint"` // pinned agent server-cert fingerprint
 }
 
 // Load reads a credential from path.

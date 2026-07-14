@@ -1,0 +1,49 @@
+syntax = "proto3";
+
+package rexec.v1;
+
+option go_package = "github.com/inovacc/remote-exec/internal/proto/rexec/v1;rexecv1";
+
+// Agent is the remote-exec agent API. Enroll runs on the bootstrap channel
+// (token-authenticated, no client cert yet); every other method runs over mTLS
+// and is gated by the caller's certificate role (Subject O=).
+service Agent {
+  // Enroll validates a single-use join token and signs the controller's client
+  // CSR. Public (bootstrap) method — authenticated by the token, not a cert.
+  rpc Enroll(EnrollRequest) returns (EnrollResponse);
+
+  // Identity returns the agent's stable id and server-cert fingerprint.
+  // Minimum role: rex:reader.
+  rpc Identity(IdentityRequest) returns (IdentityResponse);
+
+  // Info returns host/os/arch/version. Minimum role: rex:reader.
+  rpc Info(InfoRequest) returns (InfoResponse);
+}
+
+message EnrollRequest {
+  string token = 1;
+  bytes csr_pem = 2;
+}
+
+message EnrollResponse {
+  bytes client_cert_pem = 1;
+  bytes ca_pem = 2;
+  string agent_id = 3;
+  string fingerprint = 4;
+}
+
+message IdentityRequest {}
+
+message IdentityResponse {
+  string agent_id = 1;
+  string fingerprint = 2;
+}
+
+message InfoRequest {}
+
+message InfoResponse {
+  string os = 1;
+  string arch = 2;
+  string hostname = 3;
+  string version = 4;
+}

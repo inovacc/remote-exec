@@ -1,7 +1,9 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"log/slog"
 	"net"
 	"os"
 	"path/filepath"
@@ -9,16 +11,20 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/inovacc/remote-exec/internal/agentserver"
+	"github.com/inovacc/remote-exec/internal/authz"
+	"github.com/inovacc/remote-exec/internal/enroll"
 	"github.com/inovacc/remote-exec/internal/identity"
 	"github.com/inovacc/remote-exec/internal/pki"
 	"github.com/inovacc/remote-exec/internal/token"
+	"github.com/inovacc/remote-exec/internal/transport"
 )
 
 // dataLayout resolves the on-disk paths for an agent's PKI + state.
 type dataLayout struct{ dir string }
 
-func (d dataLayout) caCert() string    { return filepath.Join(d.dir, "ca.crt") }
-func (d dataLayout) caKey() string     { return filepath.Join(d.dir, "ca.key") }
+func (d dataLayout) caCert() string     { return filepath.Join(d.dir, "ca.crt") }
+func (d dataLayout) caKey() string      { return filepath.Join(d.dir, "ca.key") }
 func (d dataLayout) serverCert() string { return filepath.Join(d.dir, "server.crt") }
 func (d dataLayout) serverKey() string  { return filepath.Join(d.dir, "server.key") }
 func (d dataLayout) agentID() string    { return filepath.Join(d.dir, "agent.id") }
@@ -108,8 +114,10 @@ func tokenCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			cmd.Printf("%s\n", value)
-			cmd.PrintErrf("role=%s ttl=%s (single-use)\n", role, ttl)
+			// The token is the machine-readable output: write it to stdout
+			// directly so it stays parseable regardless of logger wiring.
+			fmt.Fprintln(os.Stdout, value)
+			fmt.Fprintf(os.Stderr, "role=%s ttl=%s (single-use)\n", role, ttl)
 			return nil
 		},
 	}
@@ -141,6 +149,68 @@ func mintServerCert(ca *pki.CA) (certPEM, keyPEM []byte, err error) {
 		return nil, nil, err
 	}
 	return certPEM, keyPEM, nil
+}
+
+// serveAgent loads the agent's PKI from disk and serves the mTLS gRPC Agent API
+// until ctx is cancelled.
+func serveAgent(ctx context.Context, logger *slog.Logger, dir, listen, version string) error {
+	d := dataLayout{dir: dir}
+	caCert, err := os.ReadFile(d.caCert())
+	if err != nil {
+		return fmt.Errorf("read CA (run `rexec-agentd ca init` first): %w", err)
+	}
+	caKey, err := os.ReadFile(d.caKey())
+	if err != nil {
+		return fmt.Errorf("read CA key: %w", err)
+	}
+	ca, err := pki.LoadCA(caCert, caKey)
+	if err != nil {
+		return err
+	}
+	serverCert, err := os.ReadFile(d.serverCert())
+	if err != nil {
+		return fmt.Errorf("read server cert: %w", err)
+	}
+	serverKey, err := os.ReadFile(d.serverKey())
+	if err != nil {
+		return fmt.Errorf("read server key: %w", err)
+	}
+	id, err := identity.AgentID(d.agentID())
+	if err != nil {
+		return err
+	}
+	fp, err := pki.FingerprintPEM(serverCert)
+	if err != nil {
+		return err
+	}
+
+	tokens := token.NewFileStore(d.tokens())
+	svc := enroll.NewService(ca, serverCert, id, tokens, pki.DefaultLeafValidity)
+	host, _ := os.Hostname()
+	agent := agentserver.New(svc, id, fp, host, version)
+
+	creds, err := transport.ServerCreds(caCert, serverCert, serverKey)
+	if err != nil {
+		return err
+	}
+	srv := transport.NewServer(creds, authz.AgentTable, agent)
+
+	lis, err := net.Listen("tcp", listen)
+	if err != nil {
+		return fmt.Errorf("listen %s: %w", listen, err)
+	}
+	logger.InfoContext(ctx, "rexec-agentd serving mTLS gRPC",
+		slog.String("listen", listen), slog.String("agent_id", id), slog.String("fingerprint", fp))
+
+	errCh := make(chan error, 1)
+	go func() { errCh <- srv.Serve(lis) }()
+	select {
+	case <-ctx.Done():
+		srv.GracefulStop()
+		return nil
+	case serveErr := <-errCh:
+		return serveErr
+	}
 }
 
 func writeFiles(files map[string][]byte) error {
