@@ -1,7 +1,7 @@
 # Roadmap
 
 ## Current Status
-**Overall Progress:** ~58% — P0–P4 done. The full security story is live end-to-end: token-bootstrapped mTLS enrollment, cert-role authz, streaming remote exec, and the **destructive-op gate** (admin role → agent policy → single-use live approval), all verified cross-process. Next: P5 cross-OS service install.
+**Overall Progress:** ~72% — P0–P5 done. Full secure channel + streaming exec + destructive-op gate, plus cross-OS service install. Next: P6 Claude Code surface (skills/commands + fleet subagent).
 
 See `docs/DESIGN.md` for the full architecture and `docs/research/TALOS-SECURE-COMMS.md` for the security derivation.
 
@@ -49,8 +49,11 @@ See `docs/DESIGN.md` for the full architecture and `docs/research/TALOS-SECURE-C
 - [x] tests: policy Evaluate matrix + Grants; bufconn Deploy allow/deny/ask + approval round-trip (single-use)
 - [x] cross-process smoke: ask→approve→run, reuse rejected, `--yes` one-shot, deny blocked
 
-### P5 — Cross-OS service [NOT STARTED]
-- [ ] `kardianos/service` install/uninstall/run on macOS, Linux, Windows
+### P5 — Cross-OS service [DONE]
+- [x] `kardianos/service` lifecycle adapter (`program` Start/Stop → `serveAgent` with a cancelable context)
+- [x] `rexec-agentd service install|uninstall|start|stop|status|run` (launchd/systemd/Windows-service)
+- [x] `service run` is the manager entrypoint; install records `service run --data-dir --listen` args
+- [x] build/vet clean; command wiring verified (actual install needs admin + mutates the OS, so not run in CI)
 
 ### P6 — Claude Code surface [NOT STARTED]
 - [ ] `rexec` skills/commands (`/remote:enroll`, `/remote:id`, `/remote:run`) + fleet subagent

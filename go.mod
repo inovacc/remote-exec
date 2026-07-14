@@ -8,6 +8,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/goreleaser/goreleaser/v2 v2.17.0
 	github.com/inovacc/mantle v0.0.0-20260606155206-e36c6f40d1f4
+	github.com/kardianos/service v1.2.2
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.11.1
 	google.golang.org/grpc v1.81.1
@@ -309,7 +310,6 @@ require (
 	github.com/jjti/go-spancheck v0.6.5 // indirect
 	github.com/julz/importas v0.2.0 // indirect
 	github.com/karamaru-alpha/copyloopvar v1.2.2 // indirect
-	github.com/kardianos/service v1.2.2 // indirect
 	github.com/kevinburke/ssh_config v1.2.0 // indirect
 	github.com/kisielk/errcheck v1.10.0 // indirect
 	github.com/kkHAIKE/contextcheck v1.1.6 // indirect

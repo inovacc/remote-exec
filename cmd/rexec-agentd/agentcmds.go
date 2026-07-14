@@ -42,7 +42,7 @@ func defaultDataDir() string {
 
 // agentCommands returns the standalone (non-serving) admin commands.
 func agentCommands() []*cobra.Command {
-	return []*cobra.Command{caInitCmd(), tokenCmd()}
+	return []*cobra.Command{caInitCmd(), tokenCmd(), serviceCmd()}
 }
 
 func caInitCmd() *cobra.Command {
