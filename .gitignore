@@ -1,0 +1,6 @@
+/remote-exec
+/remote-exec.exe
+*.out
+dist/
+.idea/
+.vscode/
