@@ -1,9 +1,14 @@
 package transport_test
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
+	"errors"
+	"fmt"
+	"io"
 	"net"
+	"os"
 	"path/filepath"
 	"testing"
 	"time"
@@ -97,16 +102,29 @@ func (h *harness) mtlsClient(t *testing.T, cfg *clientconfig.Config) rexecv1.Age
 	return rexecv1.NewAgentClient(conn)
 }
 
-// enrollReader issues a reader token and enrolls, returning the credential.
-func (h *harness) enrollReader(t *testing.T) *clientconfig.Config {
+// enroll issues a token for role and enrolls, returning the credential.
+func (h *harness) enroll(t *testing.T, role string) *clientconfig.Config {
 	t.Helper()
-	tok, err := h.tokens.Issue(authz.RoleReader, time.Hour)
+	tok, err := h.tokens.Issue(role, time.Hour)
 	require.NoError(t, err)
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	cfg, err := transport.Enroll(ctx, serverSAN, tok, "controller-a", h.bootstrapDialer())
 	require.NoError(t, err)
 	return cfg
+}
+
+func (h *harness) enrollReader(t *testing.T) *clientconfig.Config {
+	return h.enroll(t, authz.RoleReader)
+}
+
+// TestHelperProcess is the subprocess the agent execs during streaming tests.
+func TestHelperProcess(t *testing.T) {
+	if os.Getenv("REXEC_HELPER") != "1" {
+		return
+	}
+	fmt.Fprint(os.Stdout, "ok-out")
+	os.Exit(0)
 }
 
 func TestEnrollThenIdentity_OverMTLS(t *testing.T) {
@@ -143,6 +161,51 @@ func TestReaderCert_RefusedPrivilegedMethod(t *testing.T) {
 	_, err := h.mtlsClient(t, cfg).Identity(ctx, &rexecv1.IdentityRequest{})
 	require.Error(t, err)
 	require.Equal(t, codes.PermissionDenied, status.Code(err), "a reader cert must be refused an admin method")
+}
+
+func TestExec_OperatorStreamsOutputAndExit(t *testing.T) {
+	h := startAgent(t, authz.AgentTable)
+	cfg := h.enroll(t, authz.RoleOperator)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+	stream, err := h.mtlsClient(t, cfg).Exec(ctx, &rexecv1.ExecRequest{
+		Command: os.Args[0],
+		Args:    []string{"-test.run=TestHelperProcess"},
+		Env:     map[string]string{"REXEC_HELPER": "1"},
+	})
+	require.NoError(t, err)
+
+	var out bytes.Buffer
+	gotExit, exitCode := false, -1
+	for {
+		chunk, recvErr := stream.Recv()
+		if errors.Is(recvErr, io.EOF) {
+			break
+		}
+		require.NoError(t, recvErr)
+		switch m := chunk.GetMsg().(type) {
+		case *rexecv1.ExecChunk_Stdout:
+			out.Write(m.Stdout)
+		case *rexecv1.ExecChunk_ExitCode:
+			gotExit, exitCode = true, int(m.ExitCode)
+		}
+	}
+	require.True(t, gotExit, "stream must end with an exit code")
+	require.Equal(t, 0, exitCode)
+	require.Contains(t, out.String(), "ok-out")
+}
+
+func TestExec_ReaderRefused(t *testing.T) {
+	h := startAgent(t, authz.AgentTable)
+	cfg := h.enroll(t, authz.RoleReader) // operator required for Exec
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	stream, err := h.mtlsClient(t, cfg).Exec(ctx, &rexecv1.ExecRequest{Command: "echo"})
+	require.NoError(t, err)
+	_, err = stream.Recv()
+	require.Equal(t, codes.PermissionDenied, status.Code(err), "reader must be refused Exec")
 }
 
 func TestNoClientCert_RefusedProtectedMethod(t *testing.T) {

@@ -1,7 +1,7 @@
 # Roadmap
 
 ## Current Status
-**Overall Progress:** ~32% — P0–P2 done. The Talos-style secure channel is live: token-bootstrapped enrollment + mTLS gRPC + cert-role authz, verified cross-process (`agentd serve` → `token new` → `rexec enroll` → `rexec id` with fingerprint pinning; token reuse rejected). Next: P3 `Exec` streaming.
+**Overall Progress:** ~45% — P0–P3 done. Secure channel + live streaming remote execution work: an operator streamed `go version` off a remote agent while a reader was refused `Exec` at the transport. Next: P4 destructive-op gate (agent policy + `NeedsApproval`).
 
 See `docs/DESIGN.md` for the full architecture and `docs/research/TALOS-SECURE-COMMS.md` for the security derivation.
 
@@ -30,9 +30,15 @@ See `docs/DESIGN.md` for the full architecture and `docs/research/TALOS-SECURE-C
 - [x] bufconn round-trip tests: enroll→Identity over mTLS; **reader cert refused an admin method**; no-cert refused a protected method
 - [x] cross-process smoke verified (see Current Status)
 
-### P3 — Exec + streaming [NOT STARTED]
-- [ ] `internal/proto` (`rexec.v1`): `Identity`, `Info`, `Exec`, `Deploy`
-- [ ] Server-streaming `ExecChunk{stdout,stderr,exit_code,needs_approval}` — live build/deploy logs
+### P3 — Exec + streaming [DONE]
+- [x] proto: `Exec`/`Deploy` (server-streaming) + `ExecChunk{stdout,stderr,exit_code,needs_approval}` + `ApprovalRequest`
+- [x] `internal/execute`: streaming command runner (serialized emit, exit-code propagation)
+- [x] `agentserver`: `Exec` (operator) / `Deploy` (admin) handlers, shared `runStream`
+- [x] `authz.StreamInterceptor` + table entries (`Exec`→operator, `Deploy`→admin); registered via `ChainStreamInterceptor`
+- [x] `rexec run <cmd>` — streams stdout/stderr live, propagates remote exit code
+- [x] tests: execute unit tests (subprocess helper); bufconn Exec streaming for operator; **reader refused Exec**
+- [x] cross-process smoke: operator streamed `go version` off the agent; reader denied
+- [ ] `needs_approval` is defined in the proto but wired in P4 (Deploy currently runs as an admin-gated Exec)
 
 ### P4 — Destructive-op gate [NOT STARTED]
 - [ ] Role model `rex:reader ⊂ rex:operator ⊂ rex:admin`

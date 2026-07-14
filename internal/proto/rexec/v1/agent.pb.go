@@ -333,6 +333,251 @@ func (x *InfoResponse) GetVersion() string {
 	return ""
 }
 
+type ExecRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Command       string                 `protobuf:"bytes,1,opt,name=command,proto3" json:"command,omitempty"`
+	Args          []string               `protobuf:"bytes,2,rep,name=args,proto3" json:"args,omitempty"`
+	WorkingDir    string                 `protobuf:"bytes,3,opt,name=working_dir,json=workingDir,proto3" json:"working_dir,omitempty"`
+	Env           map[string]string      `protobuf:"bytes,4,rep,name=env,proto3" json:"env,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ExecRequest) Reset() {
+	*x = ExecRequest{}
+	mi := &file_rexec_v1_agent_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ExecRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ExecRequest) ProtoMessage() {}
+
+func (x *ExecRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_rexec_v1_agent_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ExecRequest.ProtoReflect.Descriptor instead.
+func (*ExecRequest) Descriptor() ([]byte, []int) {
+	return file_rexec_v1_agent_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *ExecRequest) GetCommand() string {
+	if x != nil {
+		return x.Command
+	}
+	return ""
+}
+
+func (x *ExecRequest) GetArgs() []string {
+	if x != nil {
+		return x.Args
+	}
+	return nil
+}
+
+func (x *ExecRequest) GetWorkingDir() string {
+	if x != nil {
+		return x.WorkingDir
+	}
+	return ""
+}
+
+func (x *ExecRequest) GetEnv() map[string]string {
+	if x != nil {
+		return x.Env
+	}
+	return nil
+}
+
+// ExecChunk is one streamed unit of a running command: a slice of stdout or
+// stderr, the final exit code, or (P4) a request for the caller to approve a
+// destructive operation before it proceeds.
+type ExecChunk struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Types that are valid to be assigned to Msg:
+	//
+	//	*ExecChunk_Stdout
+	//	*ExecChunk_Stderr
+	//	*ExecChunk_ExitCode
+	//	*ExecChunk_NeedsApproval
+	Msg           isExecChunk_Msg `protobuf_oneof:"msg"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ExecChunk) Reset() {
+	*x = ExecChunk{}
+	mi := &file_rexec_v1_agent_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ExecChunk) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ExecChunk) ProtoMessage() {}
+
+func (x *ExecChunk) ProtoReflect() protoreflect.Message {
+	mi := &file_rexec_v1_agent_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ExecChunk.ProtoReflect.Descriptor instead.
+func (*ExecChunk) Descriptor() ([]byte, []int) {
+	return file_rexec_v1_agent_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *ExecChunk) GetMsg() isExecChunk_Msg {
+	if x != nil {
+		return x.Msg
+	}
+	return nil
+}
+
+func (x *ExecChunk) GetStdout() []byte {
+	if x != nil {
+		if x, ok := x.Msg.(*ExecChunk_Stdout); ok {
+			return x.Stdout
+		}
+	}
+	return nil
+}
+
+func (x *ExecChunk) GetStderr() []byte {
+	if x != nil {
+		if x, ok := x.Msg.(*ExecChunk_Stderr); ok {
+			return x.Stderr
+		}
+	}
+	return nil
+}
+
+func (x *ExecChunk) GetExitCode() int32 {
+	if x != nil {
+		if x, ok := x.Msg.(*ExecChunk_ExitCode); ok {
+			return x.ExitCode
+		}
+	}
+	return 0
+}
+
+func (x *ExecChunk) GetNeedsApproval() *ApprovalRequest {
+	if x != nil {
+		if x, ok := x.Msg.(*ExecChunk_NeedsApproval); ok {
+			return x.NeedsApproval
+		}
+	}
+	return nil
+}
+
+type isExecChunk_Msg interface {
+	isExecChunk_Msg()
+}
+
+type ExecChunk_Stdout struct {
+	Stdout []byte `protobuf:"bytes,1,opt,name=stdout,proto3,oneof"`
+}
+
+type ExecChunk_Stderr struct {
+	Stderr []byte `protobuf:"bytes,2,opt,name=stderr,proto3,oneof"`
+}
+
+type ExecChunk_ExitCode struct {
+	ExitCode int32 `protobuf:"varint,3,opt,name=exit_code,json=exitCode,proto3,oneof"`
+}
+
+type ExecChunk_NeedsApproval struct {
+	NeedsApproval *ApprovalRequest `protobuf:"bytes,4,opt,name=needs_approval,json=needsApproval,proto3,oneof"`
+}
+
+func (*ExecChunk_Stdout) isExecChunk_Msg() {}
+
+func (*ExecChunk_Stderr) isExecChunk_Msg() {}
+
+func (*ExecChunk_ExitCode) isExecChunk_Msg() {}
+
+func (*ExecChunk_NeedsApproval) isExecChunk_Msg() {}
+
+type ApprovalRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Operation     string                 `protobuf:"bytes,1,opt,name=operation,proto3" json:"operation,omitempty"`                     // human-readable description of what will run
+	Reason        string                 `protobuf:"bytes,2,opt,name=reason,proto3" json:"reason,omitempty"`                           // why approval is required (policy said "ask")
+	ApprovalId    string                 `protobuf:"bytes,3,opt,name=approval_id,json=approvalId,proto3" json:"approval_id,omitempty"` // one-time id the controller must echo back to proceed
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ApprovalRequest) Reset() {
+	*x = ApprovalRequest{}
+	mi := &file_rexec_v1_agent_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ApprovalRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ApprovalRequest) ProtoMessage() {}
+
+func (x *ApprovalRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_rexec_v1_agent_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ApprovalRequest.ProtoReflect.Descriptor instead.
+func (*ApprovalRequest) Descriptor() ([]byte, []int) {
+	return file_rexec_v1_agent_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *ApprovalRequest) GetOperation() string {
+	if x != nil {
+		return x.Operation
+	}
+	return ""
+}
+
+func (x *ApprovalRequest) GetReason() string {
+	if x != nil {
+		return x.Reason
+	}
+	return ""
+}
+
+func (x *ApprovalRequest) GetApprovalId() string {
+	if x != nil {
+		return x.ApprovalId
+	}
+	return ""
+}
+
 var File_rexec_v1_agent_proto protoreflect.FileDescriptor
 
 const file_rexec_v1_agent_proto_rawDesc = "" +
@@ -355,11 +600,33 @@ const file_rexec_v1_agent_proto_rawDesc = "" +
 	"\x02os\x18\x01 \x01(\tR\x02os\x12\x12\n" +
 	"\x04arch\x18\x02 \x01(\tR\x04arch\x12\x1a\n" +
 	"\bhostname\x18\x03 \x01(\tR\bhostname\x12\x18\n" +
-	"\aversion\x18\x04 \x01(\tR\aversion2\xbe\x01\n" +
+	"\aversion\x18\x04 \x01(\tR\aversion\"\xc6\x01\n" +
+	"\vExecRequest\x12\x18\n" +
+	"\acommand\x18\x01 \x01(\tR\acommand\x12\x12\n" +
+	"\x04args\x18\x02 \x03(\tR\x04args\x12\x1f\n" +
+	"\vworking_dir\x18\x03 \x01(\tR\n" +
+	"workingDir\x120\n" +
+	"\x03env\x18\x04 \x03(\v2\x1e.rexec.v1.ExecRequest.EnvEntryR\x03env\x1a6\n" +
+	"\bEnvEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xa9\x01\n" +
+	"\tExecChunk\x12\x18\n" +
+	"\x06stdout\x18\x01 \x01(\fH\x00R\x06stdout\x12\x18\n" +
+	"\x06stderr\x18\x02 \x01(\fH\x00R\x06stderr\x12\x1d\n" +
+	"\texit_code\x18\x03 \x01(\x05H\x00R\bexitCode\x12B\n" +
+	"\x0eneeds_approval\x18\x04 \x01(\v2\x19.rexec.v1.ApprovalRequestH\x00R\rneedsApprovalB\x05\n" +
+	"\x03msg\"h\n" +
+	"\x0fApprovalRequest\x12\x1c\n" +
+	"\toperation\x18\x01 \x01(\tR\toperation\x12\x16\n" +
+	"\x06reason\x18\x02 \x01(\tR\x06reason\x12\x1f\n" +
+	"\vapproval_id\x18\x03 \x01(\tR\n" +
+	"approvalId2\xac\x02\n" +
 	"\x05Agent\x12;\n" +
 	"\x06Enroll\x12\x17.rexec.v1.EnrollRequest\x1a\x18.rexec.v1.EnrollResponse\x12A\n" +
 	"\bIdentity\x12\x19.rexec.v1.IdentityRequest\x1a\x1a.rexec.v1.IdentityResponse\x125\n" +
-	"\x04Info\x12\x15.rexec.v1.InfoRequest\x1a\x16.rexec.v1.InfoResponseB@Z>github.com/inovacc/remote-exec/internal/proto/rexec/v1;rexecv1b\x06proto3"
+	"\x04Info\x12\x15.rexec.v1.InfoRequest\x1a\x16.rexec.v1.InfoResponse\x124\n" +
+	"\x04Exec\x12\x15.rexec.v1.ExecRequest\x1a\x13.rexec.v1.ExecChunk0\x01\x126\n" +
+	"\x06Deploy\x12\x15.rexec.v1.ExecRequest\x1a\x13.rexec.v1.ExecChunk0\x01B@Z>github.com/inovacc/remote-exec/internal/proto/rexec/v1;rexecv1b\x06proto3"
 
 var (
 	file_rexec_v1_agent_proto_rawDescOnce sync.Once
@@ -373,7 +640,7 @@ func file_rexec_v1_agent_proto_rawDescGZIP() []byte {
 	return file_rexec_v1_agent_proto_rawDescData
 }
 
-var file_rexec_v1_agent_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_rexec_v1_agent_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_rexec_v1_agent_proto_goTypes = []any{
 	(*EnrollRequest)(nil),    // 0: rexec.v1.EnrollRequest
 	(*EnrollResponse)(nil),   // 1: rexec.v1.EnrollResponse
@@ -381,19 +648,29 @@ var file_rexec_v1_agent_proto_goTypes = []any{
 	(*IdentityResponse)(nil), // 3: rexec.v1.IdentityResponse
 	(*InfoRequest)(nil),      // 4: rexec.v1.InfoRequest
 	(*InfoResponse)(nil),     // 5: rexec.v1.InfoResponse
+	(*ExecRequest)(nil),      // 6: rexec.v1.ExecRequest
+	(*ExecChunk)(nil),        // 7: rexec.v1.ExecChunk
+	(*ApprovalRequest)(nil),  // 8: rexec.v1.ApprovalRequest
+	nil,                      // 9: rexec.v1.ExecRequest.EnvEntry
 }
 var file_rexec_v1_agent_proto_depIdxs = []int32{
-	0, // 0: rexec.v1.Agent.Enroll:input_type -> rexec.v1.EnrollRequest
-	2, // 1: rexec.v1.Agent.Identity:input_type -> rexec.v1.IdentityRequest
-	4, // 2: rexec.v1.Agent.Info:input_type -> rexec.v1.InfoRequest
-	1, // 3: rexec.v1.Agent.Enroll:output_type -> rexec.v1.EnrollResponse
-	3, // 4: rexec.v1.Agent.Identity:output_type -> rexec.v1.IdentityResponse
-	5, // 5: rexec.v1.Agent.Info:output_type -> rexec.v1.InfoResponse
-	3, // [3:6] is the sub-list for method output_type
-	0, // [0:3] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	9, // 0: rexec.v1.ExecRequest.env:type_name -> rexec.v1.ExecRequest.EnvEntry
+	8, // 1: rexec.v1.ExecChunk.needs_approval:type_name -> rexec.v1.ApprovalRequest
+	0, // 2: rexec.v1.Agent.Enroll:input_type -> rexec.v1.EnrollRequest
+	2, // 3: rexec.v1.Agent.Identity:input_type -> rexec.v1.IdentityRequest
+	4, // 4: rexec.v1.Agent.Info:input_type -> rexec.v1.InfoRequest
+	6, // 5: rexec.v1.Agent.Exec:input_type -> rexec.v1.ExecRequest
+	6, // 6: rexec.v1.Agent.Deploy:input_type -> rexec.v1.ExecRequest
+	1, // 7: rexec.v1.Agent.Enroll:output_type -> rexec.v1.EnrollResponse
+	3, // 8: rexec.v1.Agent.Identity:output_type -> rexec.v1.IdentityResponse
+	5, // 9: rexec.v1.Agent.Info:output_type -> rexec.v1.InfoResponse
+	7, // 10: rexec.v1.Agent.Exec:output_type -> rexec.v1.ExecChunk
+	7, // 11: rexec.v1.Agent.Deploy:output_type -> rexec.v1.ExecChunk
+	7, // [7:12] is the sub-list for method output_type
+	2, // [2:7] is the sub-list for method input_type
+	2, // [2:2] is the sub-list for extension type_name
+	2, // [2:2] is the sub-list for extension extendee
+	0, // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_rexec_v1_agent_proto_init() }
@@ -401,13 +678,19 @@ func file_rexec_v1_agent_proto_init() {
 	if File_rexec_v1_agent_proto != nil {
 		return
 	}
+	file_rexec_v1_agent_proto_msgTypes[7].OneofWrappers = []any{
+		(*ExecChunk_Stdout)(nil),
+		(*ExecChunk_Stderr)(nil),
+		(*ExecChunk_ExitCode)(nil),
+		(*ExecChunk_NeedsApproval)(nil),
+	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_rexec_v1_agent_proto_rawDesc), len(file_rexec_v1_agent_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   6,
+			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

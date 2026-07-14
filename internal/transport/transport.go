@@ -90,6 +90,7 @@ func NewServer(creds credentials.TransportCredentials, table authz.Table, agent 
 	srv := grpc.NewServer(
 		grpc.Creds(creds),
 		grpc.ChainUnaryInterceptor(authz.UnaryInterceptor(table)),
+		grpc.ChainStreamInterceptor(authz.StreamInterceptor(table)),
 	)
 	rexecv1.RegisterAgentServer(srv, agent)
 	return srv

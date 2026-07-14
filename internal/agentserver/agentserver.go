@@ -10,6 +10,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/inovacc/remote-exec/internal/enroll"
+	"github.com/inovacc/remote-exec/internal/execute"
 	rexecv1 "github.com/inovacc/remote-exec/internal/proto/rexec/v1"
 )
 
@@ -63,4 +64,45 @@ func (s *Server) Info(_ context.Context, _ *rexecv1.InfoRequest) (*rexecv1.InfoR
 		Hostname: s.hostname,
 		Version:  s.version,
 	}, nil
+}
+
+// chunkStream is satisfied by both Agent_ExecServer and Agent_DeployServer.
+type chunkStream interface {
+	Send(*rexecv1.ExecChunk) error
+	Context() context.Context
+}
+
+// Exec runs a non-destructive command, streaming its output. Gated at
+// rex:operator by the authz interceptor.
+func (s *Server) Exec(req *rexecv1.ExecRequest, stream rexecv1.Agent_ExecServer) error {
+	return runStream(req, stream)
+}
+
+// Deploy runs a destructive command, streaming its output. Gated at rex:admin.
+// The P4 gate will interpose the agent policy check and NeedsApproval flow here.
+func (s *Server) Deploy(req *rexecv1.ExecRequest, stream rexecv1.Agent_DeployServer) error {
+	return runStream(req, stream)
+}
+
+func runStream(req *rexecv1.ExecRequest, stream chunkStream) error {
+	spec := execute.Spec{
+		Command:    req.GetCommand(),
+		Args:       req.GetArgs(),
+		WorkingDir: req.GetWorkingDir(),
+		Env:        req.GetEnv(),
+	}
+	emit := func(c execute.Chunk) error {
+		chunk := &rexecv1.ExecChunk{}
+		if c.Stderr != nil {
+			chunk.Msg = &rexecv1.ExecChunk_Stderr{Stderr: c.Stderr}
+		} else {
+			chunk.Msg = &rexecv1.ExecChunk_Stdout{Stdout: c.Stdout}
+		}
+		return stream.Send(chunk)
+	}
+	code, err := execute.Run(stream.Context(), spec, emit)
+	if err != nil {
+		return status.Errorf(codes.Internal, "exec: %v", err)
+	}
+	return stream.Send(&rexecv1.ExecChunk{Msg: &rexecv1.ExecChunk_ExitCode{ExitCode: int32(code)}})
 }

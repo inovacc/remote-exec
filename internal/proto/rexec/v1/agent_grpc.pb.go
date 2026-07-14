@@ -22,6 +22,8 @@ const (
 	Agent_Enroll_FullMethodName   = "/rexec.v1.Agent/Enroll"
 	Agent_Identity_FullMethodName = "/rexec.v1.Agent/Identity"
 	Agent_Info_FullMethodName     = "/rexec.v1.Agent/Info"
+	Agent_Exec_FullMethodName     = "/rexec.v1.Agent/Exec"
+	Agent_Deploy_FullMethodName   = "/rexec.v1.Agent/Deploy"
 )
 
 // AgentClient is the client API for Agent service.
@@ -40,6 +42,13 @@ type AgentClient interface {
 	Identity(ctx context.Context, in *IdentityRequest, opts ...grpc.CallOption) (*IdentityResponse, error)
 	// Info returns host/os/arch/version. Minimum role: rex:reader.
 	Info(ctx context.Context, in *InfoRequest, opts ...grpc.CallOption) (*InfoResponse, error)
+	// Exec runs a non-destructive command (build/test/analyze) and streams its
+	// output live. Minimum role: rex:operator.
+	Exec(ctx context.Context, in *ExecRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[ExecChunk], error)
+	// Deploy runs a destructive command (deploy/release/delete) and streams its
+	// output live. Minimum role: rex:admin. The P4 destructive-op gate adds the
+	// agent-side policy check and the NeedsApproval live-approval flow.
+	Deploy(ctx context.Context, in *ExecRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[ExecChunk], error)
 }
 
 type agentClient struct {
@@ -80,6 +89,44 @@ func (c *agentClient) Info(ctx context.Context, in *InfoRequest, opts ...grpc.Ca
 	return out, nil
 }
 
+func (c *agentClient) Exec(ctx context.Context, in *ExecRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[ExecChunk], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &Agent_ServiceDesc.Streams[0], Agent_Exec_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[ExecRequest, ExecChunk]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type Agent_ExecClient = grpc.ServerStreamingClient[ExecChunk]
+
+func (c *agentClient) Deploy(ctx context.Context, in *ExecRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[ExecChunk], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &Agent_ServiceDesc.Streams[1], Agent_Deploy_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[ExecRequest, ExecChunk]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type Agent_DeployClient = grpc.ServerStreamingClient[ExecChunk]
+
 // AgentServer is the server API for Agent service.
 // All implementations must embed UnimplementedAgentServer
 // for forward compatibility.
@@ -96,6 +143,13 @@ type AgentServer interface {
 	Identity(context.Context, *IdentityRequest) (*IdentityResponse, error)
 	// Info returns host/os/arch/version. Minimum role: rex:reader.
 	Info(context.Context, *InfoRequest) (*InfoResponse, error)
+	// Exec runs a non-destructive command (build/test/analyze) and streams its
+	// output live. Minimum role: rex:operator.
+	Exec(*ExecRequest, grpc.ServerStreamingServer[ExecChunk]) error
+	// Deploy runs a destructive command (deploy/release/delete) and streams its
+	// output live. Minimum role: rex:admin. The P4 destructive-op gate adds the
+	// agent-side policy check and the NeedsApproval live-approval flow.
+	Deploy(*ExecRequest, grpc.ServerStreamingServer[ExecChunk]) error
 	mustEmbedUnimplementedAgentServer()
 }
 
@@ -114,6 +168,12 @@ func (UnimplementedAgentServer) Identity(context.Context, *IdentityRequest) (*Id
 }
 func (UnimplementedAgentServer) Info(context.Context, *InfoRequest) (*InfoResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Info not implemented")
+}
+func (UnimplementedAgentServer) Exec(*ExecRequest, grpc.ServerStreamingServer[ExecChunk]) error {
+	return status.Error(codes.Unimplemented, "method Exec not implemented")
+}
+func (UnimplementedAgentServer) Deploy(*ExecRequest, grpc.ServerStreamingServer[ExecChunk]) error {
+	return status.Error(codes.Unimplemented, "method Deploy not implemented")
 }
 func (UnimplementedAgentServer) mustEmbedUnimplementedAgentServer() {}
 func (UnimplementedAgentServer) testEmbeddedByValue()               {}
@@ -190,6 +250,28 @@ func _Agent_Info_Handler(srv interface{}, ctx context.Context, dec func(interfac
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Agent_Exec_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(ExecRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(AgentServer).Exec(m, &grpc.GenericServerStream[ExecRequest, ExecChunk]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type Agent_ExecServer = grpc.ServerStreamingServer[ExecChunk]
+
+func _Agent_Deploy_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(ExecRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(AgentServer).Deploy(m, &grpc.GenericServerStream[ExecRequest, ExecChunk]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type Agent_DeployServer = grpc.ServerStreamingServer[ExecChunk]
+
 // Agent_ServiceDesc is the grpc.ServiceDesc for Agent service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -210,6 +292,17 @@ var Agent_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Agent_Info_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "Exec",
+			Handler:       _Agent_Exec_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "Deploy",
+			Handler:       _Agent_Deploy_Handler,
+			ServerStreams: true,
+		},
+	},
 	Metadata: "rexec/v1/agent.proto",
 }

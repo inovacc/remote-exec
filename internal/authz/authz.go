@@ -80,6 +80,28 @@ func UnaryInterceptor(table Table) grpc.UnaryServerInterceptor {
 	}
 }
 
+// StreamInterceptor enforces `table` on every streaming call, mirroring
+// UnaryInterceptor. Used to gate the server-streaming Exec/Deploy methods.
+func StreamInterceptor(table Table) grpc.StreamServerInterceptor {
+	return func(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+		need, ok := table[info.FullMethod]
+		if !ok {
+			return status.Errorf(codes.PermissionDenied, "method %s not permitted", info.FullMethod)
+		}
+		if need == RolePublic {
+			return handler(srv, ss)
+		}
+		role, err := roleFromContext(ss.Context())
+		if err != nil {
+			return status.Error(codes.Unauthenticated, err.Error())
+		}
+		if !Allowed(role, need) {
+			return status.Errorf(codes.PermissionDenied, "role %q insufficient, need %q", role, need)
+		}
+		return handler(srv, ss)
+	}
+}
+
 func roleFromContext(ctx context.Context) (string, error) {
 	p, ok := peer.FromContext(ctx)
 	if !ok {
@@ -97,4 +119,6 @@ var AgentTable = Table{
 	"/rexec.v1.Agent/Enroll":   RolePublic,
 	"/rexec.v1.Agent/Identity": RoleReader,
 	"/rexec.v1.Agent/Info":     RoleReader,
+	"/rexec.v1.Agent/Exec":     RoleOperator,
+	"/rexec.v1.Agent/Deploy":   RoleAdmin,
 }

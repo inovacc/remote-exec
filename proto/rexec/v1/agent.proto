@@ -18,6 +18,15 @@ service Agent {
 
   // Info returns host/os/arch/version. Minimum role: rex:reader.
   rpc Info(InfoRequest) returns (InfoResponse);
+
+  // Exec runs a non-destructive command (build/test/analyze) and streams its
+  // output live. Minimum role: rex:operator.
+  rpc Exec(ExecRequest) returns (stream ExecChunk);
+
+  // Deploy runs a destructive command (deploy/release/delete) and streams its
+  // output live. Minimum role: rex:admin. The P4 destructive-op gate adds the
+  // agent-side policy check and the NeedsApproval live-approval flow.
+  rpc Deploy(ExecRequest) returns (stream ExecChunk);
 }
 
 message EnrollRequest {
@@ -46,4 +55,29 @@ message InfoResponse {
   string arch = 2;
   string hostname = 3;
   string version = 4;
+}
+
+message ExecRequest {
+  string command = 1;
+  repeated string args = 2;
+  string working_dir = 3;
+  map<string, string> env = 4;
+}
+
+// ExecChunk is one streamed unit of a running command: a slice of stdout or
+// stderr, the final exit code, or (P4) a request for the caller to approve a
+// destructive operation before it proceeds.
+message ExecChunk {
+  oneof msg {
+    bytes stdout = 1;
+    bytes stderr = 2;
+    int32 exit_code = 3;
+    ApprovalRequest needs_approval = 4;
+  }
+}
+
+message ApprovalRequest {
+  string operation = 1;   // human-readable description of what will run
+  string reason = 2;      // why approval is required (policy said "ask")
+  string approval_id = 3; // one-time id the controller must echo back to proceed
 }
