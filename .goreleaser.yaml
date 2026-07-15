@@ -1,9 +1,18 @@
 version: 2
 project_name: remote-exec
 builds:
-  - main: ./cmd/remote-exec
-    binary: remote-exec
+  - id: rexec-agentd
+    main: ./cmd/rexec-agentd
+    binary: rexec-agentd
     env: [CGO_ENABLED=0]
+    ldflags: ["-s -w -X main.version={{ .Version }}"]
+    goos: [linux, darwin, windows]
+    goarch: [amd64, arm64]
+  - id: rexec
+    main: ./cmd/rexec
+    binary: rexec
+    env: [CGO_ENABLED=0]
+    ldflags: ["-s -w -X main.version={{ .Version }}"]
     goos: [linux, darwin, windows]
     goarch: [amd64, arm64]
 archives:
