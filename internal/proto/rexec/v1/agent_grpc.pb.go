@@ -22,7 +22,7 @@ const (
 	Agent_Enroll_FullMethodName   = "/rexec.v1.Agent/Enroll"
 	Agent_Identity_FullMethodName = "/rexec.v1.Agent/Identity"
 	Agent_Info_FullMethodName     = "/rexec.v1.Agent/Info"
-	Agent_Exec_FullMethodName     = "/rexec.v1.Agent/Exec"
+	Agent_Run_FullMethodName      = "/rexec.v1.Agent/Run"
 	Agent_Deploy_FullMethodName   = "/rexec.v1.Agent/Deploy"
 )
 
@@ -42,9 +42,9 @@ type AgentClient interface {
 	Identity(ctx context.Context, in *IdentityRequest, opts ...grpc.CallOption) (*IdentityResponse, error)
 	// Info returns host/os/arch/version. Minimum role: rex:reader.
 	Info(ctx context.Context, in *InfoRequest, opts ...grpc.CallOption) (*InfoResponse, error)
-	// Exec runs a non-destructive command (build/test/analyze) and streams its
+	// Run executes a non-destructive command (build/test/analyze) and streams its
 	// output live. Minimum role: rex:operator.
-	Exec(ctx context.Context, in *ExecRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[ExecChunk], error)
+	Run(ctx context.Context, in *ExecRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[ExecChunk], error)
 	// Deploy runs a destructive command (deploy/release/delete) and streams its
 	// output live. Minimum role: rex:admin. The P4 destructive-op gate adds the
 	// agent-side policy check and the NeedsApproval live-approval flow.
@@ -89,9 +89,9 @@ func (c *agentClient) Info(ctx context.Context, in *InfoRequest, opts ...grpc.Ca
 	return out, nil
 }
 
-func (c *agentClient) Exec(ctx context.Context, in *ExecRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[ExecChunk], error) {
+func (c *agentClient) Run(ctx context.Context, in *ExecRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[ExecChunk], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	stream, err := c.cc.NewStream(ctx, &Agent_ServiceDesc.Streams[0], Agent_Exec_FullMethodName, cOpts...)
+	stream, err := c.cc.NewStream(ctx, &Agent_ServiceDesc.Streams[0], Agent_Run_FullMethodName, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +106,7 @@ func (c *agentClient) Exec(ctx context.Context, in *ExecRequest, opts ...grpc.Ca
 }
 
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type Agent_ExecClient = grpc.ServerStreamingClient[ExecChunk]
+type Agent_RunClient = grpc.ServerStreamingClient[ExecChunk]
 
 func (c *agentClient) Deploy(ctx context.Context, in *ExecRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[ExecChunk], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
@@ -143,9 +143,9 @@ type AgentServer interface {
 	Identity(context.Context, *IdentityRequest) (*IdentityResponse, error)
 	// Info returns host/os/arch/version. Minimum role: rex:reader.
 	Info(context.Context, *InfoRequest) (*InfoResponse, error)
-	// Exec runs a non-destructive command (build/test/analyze) and streams its
+	// Run executes a non-destructive command (build/test/analyze) and streams its
 	// output live. Minimum role: rex:operator.
-	Exec(*ExecRequest, grpc.ServerStreamingServer[ExecChunk]) error
+	Run(*ExecRequest, grpc.ServerStreamingServer[ExecChunk]) error
 	// Deploy runs a destructive command (deploy/release/delete) and streams its
 	// output live. Minimum role: rex:admin. The P4 destructive-op gate adds the
 	// agent-side policy check and the NeedsApproval live-approval flow.
@@ -169,8 +169,8 @@ func (UnimplementedAgentServer) Identity(context.Context, *IdentityRequest) (*Id
 func (UnimplementedAgentServer) Info(context.Context, *InfoRequest) (*InfoResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Info not implemented")
 }
-func (UnimplementedAgentServer) Exec(*ExecRequest, grpc.ServerStreamingServer[ExecChunk]) error {
-	return status.Error(codes.Unimplemented, "method Exec not implemented")
+func (UnimplementedAgentServer) Run(*ExecRequest, grpc.ServerStreamingServer[ExecChunk]) error {
+	return status.Error(codes.Unimplemented, "method Run not implemented")
 }
 func (UnimplementedAgentServer) Deploy(*ExecRequest, grpc.ServerStreamingServer[ExecChunk]) error {
 	return status.Error(codes.Unimplemented, "method Deploy not implemented")
@@ -250,16 +250,16 @@ func _Agent_Info_Handler(srv interface{}, ctx context.Context, dec func(interfac
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Agent_Exec_Handler(srv interface{}, stream grpc.ServerStream) error {
+func _Agent_Run_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(ExecRequest)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
-	return srv.(AgentServer).Exec(m, &grpc.GenericServerStream[ExecRequest, ExecChunk]{ServerStream: stream})
+	return srv.(AgentServer).Run(m, &grpc.GenericServerStream[ExecRequest, ExecChunk]{ServerStream: stream})
 }
 
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type Agent_ExecServer = grpc.ServerStreamingServer[ExecChunk]
+type Agent_RunServer = grpc.ServerStreamingServer[ExecChunk]
 
 func _Agent_Deploy_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(ExecRequest)
@@ -294,8 +294,8 @@ var Agent_ServiceDesc = grpc.ServiceDesc{
 	},
 	Streams: []grpc.StreamDesc{
 		{
-			StreamName:    "Exec",
-			Handler:       _Agent_Exec_Handler,
+			StreamName:    "Run",
+			Handler:       _Agent_Run_Handler,
 			ServerStreams: true,
 		},
 		{

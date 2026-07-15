@@ -119,6 +119,6 @@ var AgentTable = Table{
 	"/rexec.v1.Agent/Enroll":   RolePublic,
 	"/rexec.v1.Agent/Identity": RoleReader,
 	"/rexec.v1.Agent/Info":     RoleReader,
-	"/rexec.v1.Agent/Exec":     RoleOperator,
+	"/rexec.v1.Agent/Run":      RoleOperator,
 	"/rexec.v1.Agent/Deploy":   RoleAdmin,
 }

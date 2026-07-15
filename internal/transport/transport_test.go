@@ -168,13 +168,13 @@ func TestReaderCert_RefusedPrivilegedMethod(t *testing.T) {
 	require.Equal(t, codes.PermissionDenied, status.Code(err), "a reader cert must be refused an admin method")
 }
 
-func TestExec_OperatorStreamsOutputAndExit(t *testing.T) {
+func TestRun_OperatorStreamsOutputAndExit(t *testing.T) {
 	h := startAgent(t, authz.AgentTable)
 	cfg := h.enroll(t, authz.RoleOperator)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
-	stream, err := h.mtlsClient(t, cfg).Exec(ctx, &rexecv1.ExecRequest{
+	stream, err := h.mtlsClient(t, cfg).Run(ctx, &rexecv1.ExecRequest{
 		Command: os.Args[0],
 		Args:    []string{"-test.run=TestHelperProcess"},
 		Env:     map[string]string{"REXEC_HELPER": "1"},
@@ -201,13 +201,13 @@ func TestExec_OperatorStreamsOutputAndExit(t *testing.T) {
 	require.Contains(t, out.String(), "ok-out")
 }
 
-func TestExec_ReaderRefused(t *testing.T) {
+func TestRun_ReaderRefused(t *testing.T) {
 	h := startAgent(t, authz.AgentTable)
 	cfg := h.enroll(t, authz.RoleReader) // operator required for Exec
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	stream, err := h.mtlsClient(t, cfg).Exec(ctx, &rexecv1.ExecRequest{Command: "echo"})
+	stream, err := h.mtlsClient(t, cfg).Run(ctx, &rexecv1.ExecRequest{Command: "echo"})
 	require.NoError(t, err)
 	_, err = stream.Recv()
 	require.Equal(t, codes.PermissionDenied, status.Code(err), "reader must be refused Exec")

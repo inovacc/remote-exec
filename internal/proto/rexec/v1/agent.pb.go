@@ -633,12 +633,12 @@ const file_rexec_v1_agent_proto_rawDesc = "" +
 	"\toperation\x18\x01 \x01(\tR\toperation\x12\x16\n" +
 	"\x06reason\x18\x02 \x01(\tR\x06reason\x12\x1f\n" +
 	"\vapproval_id\x18\x03 \x01(\tR\n" +
-	"approvalId2\xac\x02\n" +
+	"approvalId2\xab\x02\n" +
 	"\x05Agent\x12;\n" +
 	"\x06Enroll\x12\x17.rexec.v1.EnrollRequest\x1a\x18.rexec.v1.EnrollResponse\x12A\n" +
 	"\bIdentity\x12\x19.rexec.v1.IdentityRequest\x1a\x1a.rexec.v1.IdentityResponse\x125\n" +
-	"\x04Info\x12\x15.rexec.v1.InfoRequest\x1a\x16.rexec.v1.InfoResponse\x124\n" +
-	"\x04Exec\x12\x15.rexec.v1.ExecRequest\x1a\x13.rexec.v1.ExecChunk0\x01\x126\n" +
+	"\x04Info\x12\x15.rexec.v1.InfoRequest\x1a\x16.rexec.v1.InfoResponse\x123\n" +
+	"\x03Run\x12\x15.rexec.v1.ExecRequest\x1a\x13.rexec.v1.ExecChunk0\x01\x126\n" +
 	"\x06Deploy\x12\x15.rexec.v1.ExecRequest\x1a\x13.rexec.v1.ExecChunk0\x01B@Z>github.com/inovacc/remote-exec/internal/proto/rexec/v1;rexecv1b\x06proto3"
 
 var (
@@ -672,12 +672,12 @@ var file_rexec_v1_agent_proto_depIdxs = []int32{
 	0, // 2: rexec.v1.Agent.Enroll:input_type -> rexec.v1.EnrollRequest
 	2, // 3: rexec.v1.Agent.Identity:input_type -> rexec.v1.IdentityRequest
 	4, // 4: rexec.v1.Agent.Info:input_type -> rexec.v1.InfoRequest
-	6, // 5: rexec.v1.Agent.Exec:input_type -> rexec.v1.ExecRequest
+	6, // 5: rexec.v1.Agent.Run:input_type -> rexec.v1.ExecRequest
 	6, // 6: rexec.v1.Agent.Deploy:input_type -> rexec.v1.ExecRequest
 	1, // 7: rexec.v1.Agent.Enroll:output_type -> rexec.v1.EnrollResponse
 	3, // 8: rexec.v1.Agent.Identity:output_type -> rexec.v1.IdentityResponse
 	5, // 9: rexec.v1.Agent.Info:output_type -> rexec.v1.InfoResponse
-	7, // 10: rexec.v1.Agent.Exec:output_type -> rexec.v1.ExecChunk
+	7, // 10: rexec.v1.Agent.Run:output_type -> rexec.v1.ExecChunk
 	7, // 11: rexec.v1.Agent.Deploy:output_type -> rexec.v1.ExecChunk
 	7, // [7:12] is the sub-list for method output_type
 	2, // [2:7] is the sub-list for method input_type

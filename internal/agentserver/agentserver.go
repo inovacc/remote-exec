@@ -77,15 +77,15 @@ func (s *Server) Info(_ context.Context, _ *rexecv1.InfoRequest) (*rexecv1.InfoR
 	}, nil
 }
 
-// chunkStream is satisfied by both Agent_ExecServer and Agent_DeployServer.
+// chunkStream is satisfied by both Agent_RunServer and Agent_DeployServer.
 type chunkStream interface {
 	Send(*rexecv1.ExecChunk) error
 	Context() context.Context
 }
 
-// Exec runs a non-destructive command, streaming its output. Gated at
+// Run executes a non-destructive command, streaming its output. Gated at
 // rex:operator by the authz interceptor.
-func (s *Server) Exec(req *rexecv1.ExecRequest, stream rexecv1.Agent_ExecServer) error {
+func (s *Server) Run(req *rexecv1.ExecRequest, stream rexecv1.Agent_RunServer) error {
 	return runStream(req, stream)
 }
 

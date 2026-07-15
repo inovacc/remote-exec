@@ -19,9 +19,9 @@ service Agent {
   // Info returns host/os/arch/version. Minimum role: rex:reader.
   rpc Info(InfoRequest) returns (InfoResponse);
 
-  // Exec runs a non-destructive command (build/test/analyze) and streams its
+  // Run executes a non-destructive command (build/test/analyze) and streams its
   // output live. Minimum role: rex:operator.
-  rpc Exec(ExecRequest) returns (stream ExecChunk);
+  rpc Run(ExecRequest) returns (stream ExecChunk);
 
   // Deploy runs a destructive command (deploy/release/delete) and streams its
   // output live. Minimum role: rex:admin. The P4 destructive-op gate adds the

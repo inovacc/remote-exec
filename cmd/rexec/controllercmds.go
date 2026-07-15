@@ -85,7 +85,7 @@ func runCmd() *cobra.Command {
 			}
 			defer func() { _ = conn.Close() }()
 
-			stream, err := rexecv1.NewAgentClient(conn).Exec(cmd.Context(), &rexecv1.ExecRequest{
+			stream, err := rexecv1.NewAgentClient(conn).Run(cmd.Context(), &rexecv1.ExecRequest{
 				Command:    args[0],
 				Args:       args[1:],
 				WorkingDir: workDir,
