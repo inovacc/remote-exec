@@ -1,11 +1,11 @@
 ---
 description: Enroll this controller with a remote rexec agent using a single-use join token
-argument-hint: <endpoint> --token <token> [--config <path>]
-allowed-tools: Bash(rexec enroll:*)
+argument-hint: --endpoint <host:port> --token <token> [--credential <path>]
+allowed-tools: Bash(rexec agent enroll:*)
 ---
 Enroll the controller with a remote agent by running:
 
-`rexec enroll $ARGUMENTS`
+`rexec agent enroll $ARGUMENTS`
 
 The agent signs a client certificate (the role is fixed by the token the operator issued)
 and returns the CA plus its identity. Report back:

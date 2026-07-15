@@ -1,11 +1,11 @@
 ---
 description: Run a DESTRUCTIVE command on a remote agent, honoring the human-in-the-loop approval gate
-argument-hint: <command> [args...] [--dir <path>] [--env KEY=VAL]
-allowed-tools: Bash(rexec deploy:*), AskUserQuestion
+argument-hint: <command> [args...] [--workdir <path>] [--set-env KEY=VAL]
+allowed-tools: Bash(rexec exec deploy:*), AskUserQuestion
 ---
 Run a destructive command on the enrolled agent through the destructive-op gate:
 
-`rexec deploy $ARGUMENTS`
+`rexec exec deploy $ARGUMENTS`
 
 The agent enforces three checks — admin role (from the client cert), its local `policy.yaml`,
 and (when the policy says `ask`) a one-time live approval. Handle the outcome:
@@ -19,7 +19,7 @@ and (when the policy says `ask`) a one-time live approval. Handle the outcome:
    (and exit is non-zero) → the agent is waiting for human approval. You MUST:
    a. Call **AskUserQuestion** asking whether to approve running `<op>` on the remote agent,
       quoting `<reason>`. Options: **Approve** / **Deny**.
-   b. If **Approve** → re-run `rexec deploy --approval <id> $ARGUMENTS` and report the streamed
+   b. If **Approve** → re-run `rexec exec deploy --approval <id> $ARGUMENTS` and report the streamed
       result.
    c. If **Deny** → stop and report that the destructive operation was declined. The approval
       id expires unused.

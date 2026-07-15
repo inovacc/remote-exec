@@ -33,6 +33,8 @@ func main() {
 		os.Exit(1)
 	}
 
+	root.PersistentFlags().String("endpoint", "", "agent endpoint host:port (overrides the pinned credential)")
+	root.PersistentFlags().String("credential", defaultControllerConfig(), "controller credential path (--config is owned by the runtime)")
 	root.AddCommand(controllerCommands()...)
 
 	root.RunE = func(cmd *cobra.Command, _ []string) error {

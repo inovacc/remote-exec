@@ -1,5 +1,5 @@
 # Command Taxonomy — rules contract
-<!-- rev:001 -->
+<!-- rev:002 -->
 
 Standing rules for the `rexec` (controller) and `rexec-agentd` (agent) CLIs and the
 `rexec.v1.Agent` gRPC surface. New commands/methods MUST conform. Rationale + the current
@@ -26,8 +26,9 @@ old→new migration live in `docs/superpowers/specs/2026-07-15-command-taxonomy-
 ## 4. Flags — one canonical name per concept, declared once
 
 - **Persistent flags live on the root** (or the nearest shared parent) and are inherited — never
-  re-declared per subcommand. Controller root: `--endpoint`, `--config`. Agent root:
-  `--data-dir`, `--listen`.
+  re-declared per subcommand. Controller root: `--endpoint`, `--credential`. Agent root:
+  `--data-dir`, `--listen`. (The controller credential is `--credential`, not `--config`, because
+  the mantle runtime already owns `--config` — see rule 4's framework-name clause.)
 - One spelling per concept across the whole surface. No synonyms. A flag name means the same
   thing everywhere it appears.
 - A target address is always the `--endpoint` **flag** — never a positional on some commands and a

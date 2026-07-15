@@ -1,9 +1,9 @@
 ---
 description: Ask an enrolled remote agent for its identity and re-assert the pinned fingerprint
-argument-hint: [--config <path>] [--endpoint <host:port>]
-allowed-tools: Bash(rexec id:*)
+argument-hint: [--credential <path>] [--endpoint <host:port>]
+allowed-tools: Bash(rexec agent identity:*)
 ---
-Run `rexec id $ARGUMENTS`.
+Run `rexec agent identity $ARGUMENTS`.
 
 This dials the agent over mTLS and returns its stable **agent id** and **server-cert
 fingerprint**, verifying the fingerprint against the one pinned at enrollment. Report the id

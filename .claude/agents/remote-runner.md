@@ -13,19 +13,19 @@ agent identified by the credential you were given.
 - A task: a build/test/analysis command (non-destructive) or a deploy/release (destructive).
 
 ## Procedure
-1. **Confirm the target.** Run `rexec id --config <path>`. Record the agent id and confirm the
-   fingerprint pin is OK. If it reports a fingerprint mismatch, STOP and report a possible
-   identity/MITM problem — do not run anything.
-2. **Non-destructive work** (build, test, analyze): run `rexec run --config <path> <command...>`.
+1. **Confirm the target.** Run `rexec agent identity --credential <path>`. Record the agent id and
+   confirm the fingerprint pin is OK. If it reports a fingerprint mismatch, STOP and report a
+   possible identity/MITM problem — do not run anything.
+2. **Non-destructive work** (build, test, analyze): run `rexec exec run --credential <path> <command...>`.
    Output streams live; the remote exit code is the local exit code. Summarize success/failure
    with the relevant tail of output.
 3. **Destructive work** (deploy, release, delete, infra mutation): run
-   `rexec deploy --config <path> <command...>` and handle the gate:
+   `rexec exec deploy --credential <path> <command...>` and handle the gate:
    - Ran and exited 0 → report success.
    - `policy denies` / `need "rex:admin"` → report the refusal; do not work around it.
    - `APPROVAL_REQUIRED approval_id=<id> operation="<op>" reason="<reason>"` → call
      **AskUserQuestion** (Approve / Deny). On Approve, re-run
-     `rexec deploy --config <path> --approval <id> <command...>`. On Deny, stop and report.
+     `rexec exec deploy --credential <path> --approval <id> <command...>`. On Deny, stop and report.
    - Never use `--yes` unless explicitly told to.
 
 ## Rules

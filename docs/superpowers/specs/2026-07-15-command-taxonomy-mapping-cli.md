@@ -13,7 +13,9 @@ Date: 2026-07-15 · Clean break (no aliases). Exact line refs in `docs/command-t
 | `rexec deploy <cmd…> --config --endpoint --dir --env --approval --yes` | `rexec exec deploy <cmd…> --workdir --set-env --approval --yes` | `controllercmds.go` `deployCmd` | YES | same flag renames |
 
 Persistent (root) flags — declared once on `rexec`, inherited by all: `--endpoint <host:port>`
-(required for `agent enroll`; else from credential), `--config <path>` (default `~/.rexec/config.yaml`).
+(required for `agent enroll`; else from credential), `--credential <path>` (default
+`~/.rexec/config.yaml`). Note: the credential flag is `--credential`, not `--config` — the mantle
+runtime already owns `--config`.
 
 ## Agent daemon — `rexec-agentd`
 
