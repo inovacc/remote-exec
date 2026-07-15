@@ -7,7 +7,7 @@ Granular tasks for the remaining (v2 / hardening) work. v1 (P0–P6) is delivere
 
 | ID | What | Files | Deps | Effort |
 |----|------|-------|------|--------|
-| SEC-1 | `--expect-fingerprint` on `rexec enroll`; verify agent server cert during bootstrap instead of `InsecureSkipVerify` | `internal/transport/transport.go`, `cmd/rexec/controllercmds.go` | — | M |
+| SEC-1 | `--expect-fingerprint` on `rexec agent enroll`; verify agent server cert during bootstrap instead of `InsecureSkipVerify` | `internal/transport/transport.go`, `cmd/rexec/controllercmds.go` | — | M |
 | SEC-2 | Leaf-cert auto-rotation: background re-issue of client/server leaves before expiry | `internal/pki`, new `internal/rotate` | — | M |
 | SEC-3 | Append-only audit log of destructive ops (who/role/fingerprint/op/approval) | `internal/agentserver`, new `internal/audit` | — | M |
 | SEC-4 | Sign RPC requests for non-repudiation of destructive ops (weaver `lib/signature` pattern) | `internal/transport`, `proto/` | SEC-3 | L |

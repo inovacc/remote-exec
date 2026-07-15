@@ -1,5 +1,5 @@
 # AGENTS.md
-<!-- rev:001 -->
+<!-- rev:002 -->
 
 Canonical cross-tool agent instructions for **remote-exec** (read by Claude Code via
 `CLAUDE.md`'s `@AGENTS.md` import, and by Codex/Cursor/Gemini directly).
@@ -11,7 +11,7 @@ Secure, cross-OS remote execution for Claude Code. Two Go binaries in one module
 
 - `cmd/rexec-agentd` — the agent daemon: runs as an OS service, terminates mTLS, serves the
   `rexec.v1.Agent` gRPC API, enforces the destructive-op policy.
-- `cmd/rexec` — the controller CLI Claude Code drives: `enroll`, `id`, `run`, `deploy`.
+- `cmd/rexec` — the controller CLI Claude Code drives: `agent enroll`, `agent identity`, `agent info`, `exec run`, `exec deploy`.
 
 Security model is derived from Talos Linux — see `docs/DESIGN.md` and
 `docs/research/TALOS-SECURE-COMMS.md`.
@@ -36,7 +36,7 @@ Run programs with `go run ./cmd/<app>` — never `go build && ./app`. `go build 
 
 ```
 cmd/rexec-agentd/   daemon: ca init, token new, service *, serve; agentcmds.go, servicecmds.go
-cmd/rexec/          controller CLI: enroll, id, run, deploy (controllercmds.go)
+cmd/rexec/          controller CLI: agent {enroll,identity,info}, exec {run,deploy} (controllercmds.go)
 internal/pki        Ed25519 CA, CSR sign, fingerprint
 internal/identity   stable persisted agent UUID
 internal/token      single-use join tokens (file-backed, flock)
@@ -44,7 +44,7 @@ internal/enroll     enrollment service (signs client CSR only)
 internal/clientconfig  talosconfig-style credential + mTLS dial config
 internal/authz      role-from-cert + per-method unary/stream interceptors
 internal/transport  gRPC mTLS server/client, bootstrap enroll, Dial
-internal/agentserver Agent gRPC service impl (Enroll/Identity/Info/Exec/Deploy)
+internal/agentserver Agent gRPC service impl (Enroll/Identity/Info/Run/Deploy)
 internal/execute    streaming command runner
 internal/policy     destructive-op policy + single-use approval grants
 internal/proto/rexec/v1  generated gRPC (edit proto/rexec/v1/agent.proto, run `task proto`)

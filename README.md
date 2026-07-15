@@ -1,5 +1,5 @@
 # remote-exec
-<!-- rev:001 -->
+<!-- rev:002 -->
 
 > Secure, cross-OS remote execution for Claude Code. A controller — driven by a Claude Code
 > subagent fleet, skills, and commands — discovers a remote machine by id, opens a
@@ -19,7 +19,7 @@ approval for anything destructive.
 | Binary | Role |
 |--------|------|
 | `rexec-agentd` | The agent daemon. Runs as an OS service on macOS/Linux/Windows, terminates mTLS, serves the gRPC API, enforces policy. |
-| `rexec` | The controller CLI Claude Code drives: `enroll`, `id`, `run`, `deploy`. |
+| `rexec` | The controller CLI Claude Code drives: `agent enroll`, `agent identity`, `agent info`, `exec run`, `exec deploy`. |
 
 ## Quick start
 
@@ -29,16 +29,17 @@ rexec-agentd ca init                     # mint the agent CA + server cert (prin
 # optional destructive-op policy:
 cp docs/policy.example.yaml <data-dir>/policy.yaml
 rexec-agentd service install             # install as an OS service (launchd/systemd/Windows)
-rexec-agentd service start               # or run directly: rexec-agentd --listen 127.0.0.1:50000
+rexec-agentd service start               # or run directly: rexec-agentd serve --listen 127.0.0.1:50000
 rexec-agentd token new --role rex:operator   # issue a single-use join token
 ```
 
 On the **controller** (where Claude Code runs):
 ```bash
-rexec enroll <host:port> --token <token> # pins the agent id + fingerprint, writes ~/.rexec/config.yaml
-rexec id                                 # ask the agent for its id, re-assert the pin
-rexec run go build ./...                 # non-destructive: streams output live
-rexec deploy ./release.sh                # destructive: goes through the approval gate
+rexec agent enroll --endpoint <host:port> --token <token>  # pins id+fingerprint, writes ~/.rexec/config.yaml
+rexec agent identity                     # ask the agent for its id, re-assert the pin
+rexec agent info                         # host os/arch/version
+rexec exec run go build ./...            # non-destructive: streams output live
+rexec exec deploy ./release.sh           # destructive: goes through the approval gate
 ```
 
 ## Security model (Talos-derived)
@@ -48,7 +49,7 @@ rexec deploy ./release.sh                # destructive: goes through the approva
   `talosconfig` (CA + client cert/key + endpoints + pinned id/fingerprint).
 - **mTLS + RBAC gate:** gRPC over TLS 1.3 with client-cert verification. The caller's role lives
   in the cert Subject `O=` (`rex:reader ⊂ operator ⊂ admin`); a per-method interceptor enforces
-  it. A reader cert physically cannot invoke `run`; only an admin cert reaches `deploy`.
+  it. A reader cert physically cannot invoke `exec run`; only an admin cert reaches `exec deploy`.
 - **Identity + pinning:** stable agent id (host UUID) pinned to `sha256(server-cert)`; every call
   re-asserts it and errors on mismatch.
 - **Destructive-op gate:** admin role → agent `policy.yaml` (`deny|allow|ask`) → single-use,

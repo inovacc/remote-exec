@@ -1,5 +1,5 @@
 # Architecture
-<!-- rev:001 -->
+<!-- rev:002 -->
 
 Diagrams reflect the delivered code (v1). See `docs/DESIGN.md` for rationale and
 `docs/research/TALOS-SECURE-COMMS.md` for the security derivation.
@@ -63,7 +63,7 @@ sequenceDiagram
 
 ```mermaid
 sequenceDiagram
-  participant C as rexec deploy
+  participant C as rexec exec deploy
   participant I as authz interceptor
   participant D as agentserver.Deploy
   participant P as policy

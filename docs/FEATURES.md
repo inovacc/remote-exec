@@ -6,9 +6,9 @@
 - **Token-bootstrapped enrollment** — single-use join tokens; the agent signs the controller's client CSR only (trustd pattern).
 - **mTLS gRPC transport** — TLS 1.3, client-cert verification; public `Enroll` + protected methods on one port.
 - **Role-based authorization** — role in the client cert `O=` (`rex:reader ⊂ operator ⊂ admin`), enforced per-method (unary + stream).
-- **Identity & pinning** — `rexec id` returns the stable agent id + fingerprint; pinned at enroll, re-asserted every call.
-- **Streaming remote exec** — `rexec run` (operator) streams stdout/stderr live and propagates the remote exit code.
-- **Destructive-op gate** — `rexec deploy` (admin) → agent `policy.yaml` (deny|allow|ask) → single-use, command-bound, 5-min live approval.
+- **Identity & pinning** — `rexec agent identity` returns the stable agent id + fingerprint; pinned at enroll, re-asserted every call.
+- **Streaming remote exec** — `rexec exec run` (operator) streams stdout/stderr live and propagates the remote exit code.
+- **Destructive-op gate** — `rexec exec deploy` (admin) → agent `policy.yaml` (deny|allow|ask) → single-use, command-bound, 5-min live approval.
 - **Cross-OS service** — `rexec-agentd service install|uninstall|start|stop|status|run` via `kardianos/service`.
 - **Claude Code surface** — `/remote:enroll|id|run|deploy` slash commands + `remote-runner` fleet subagent; approval wired to `AskUserQuestion`.
 
