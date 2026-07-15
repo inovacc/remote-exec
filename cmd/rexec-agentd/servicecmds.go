@@ -53,20 +53,17 @@ func newAgentService(dataDir, listen, version string) (service.Service, error) {
 
 // serviceCmd exposes install/uninstall/start/stop/status/run for the OS service.
 func serviceCmd() *cobra.Command {
-	var dataDir, listen string
 	cmd := &cobra.Command{
 		Use:   "service",
 		Short: "Manage rexec-agentd as an OS service (mac/linux/windows)",
 	}
-	cmd.PersistentFlags().StringVar(&dataDir, "data-dir", defaultDataDir(), "agent data directory")
-	cmd.PersistentFlags().StringVar(&listen, "listen", "127.0.0.1:50000", "mTLS gRPC listen address")
 
 	action := func(name string, fn func(service.Service) error) *cobra.Command {
 		return &cobra.Command{
 			Use:   name,
 			Short: name + " the rexec-agentd service",
 			RunE: func(cmd *cobra.Command, _ []string) error {
-				svc, err := newAgentService(dataDir, listen, version)
+				svc, err := newAgentService(dataDirOf(cmd), listenOf(cmd), version)
 				if err != nil {
 					return err
 				}
@@ -86,7 +83,7 @@ func serviceCmd() *cobra.Command {
 		Use:   "status",
 		Short: "Report the service status",
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			svc, err := newAgentService(dataDir, listen, version)
+			svc, err := newAgentService(dataDirOf(cmd), listenOf(cmd), version)
 			if err != nil {
 				return err
 			}
@@ -103,7 +100,7 @@ func serviceCmd() *cobra.Command {
 		Use:   "run",
 		Short: "Run under the service manager (invoked by the OS; blocks)",
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			svc, err := newAgentService(dataDir, listen, version)
+			svc, err := newAgentService(dataDirOf(cmd), listenOf(cmd), version)
 			if err != nil {
 				return err
 			}

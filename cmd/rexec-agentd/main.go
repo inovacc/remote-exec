@@ -26,13 +26,19 @@ func main() {
 
 	a := app.New()
 
-	// Standalone admin commands: CA init and token issuance.
+	// --data-dir / --listen are declared once on the root and inherited by every
+	// subcommand (serve, ca, token, service).
+	root.PersistentFlags().String("data-dir", defaultDataDir(), "agent data directory")
+	root.PersistentFlags().String("listen", "127.0.0.1:50000", "mTLS gRPC listen address")
+
+	// Standalone admin commands: CA init, token issuance, OS-service management.
 	root.AddCommand(agentCommands()...)
 
-	var dataDir, listen string
-	root.PersistentFlags().StringVar(&dataDir, "data-dir", defaultDataDir(), "agent data directory")
-	root.PersistentFlags().StringVar(&listen, "listen", "127.0.0.1:50000", "mTLS gRPC listen address")
-
+	// serve is the explicit primary action (the daemon's foreground run).
+	serveCmd := &cobra.Command{
+		Use:   "serve",
+		Short: "Serve the mTLS gRPC Agent API in the foreground",
+	}
 	core := func(ctx context.Context, rt *bootstrap.Runtime) error {
 		plat, err := platform.New(ctx)
 		if err != nil {
@@ -41,7 +47,7 @@ func main() {
 		defer func() { _ = plat.Close(ctx) }()
 
 		rt.Logger.InfoContext(ctx, "rexec-agentd started")
-		if serveErr := serveAgent(ctx, rt.Logger, dataDir, listen, version); serveErr != nil {
+		if serveErr := serveAgent(ctx, rt.Logger, dataDirOf(serveCmd), listenOf(serveCmd), version); serveErr != nil {
 			return serveErr
 		}
 
@@ -53,7 +59,7 @@ func main() {
 		return rt.Shutdown(shutdownCtx)
 	}
 
-	if err := bootstrap.Serve(root, a, core,
+	if err := bootstrap.Serve(serveCmd, a, core,
 		bootstrap.WithAppName("rexec-agentd"),
 		bootstrap.WithVersion(version),
 		bootstrap.WithConfigPath("config.yaml"),
@@ -62,6 +68,7 @@ func main() {
 		_, _ = os.Stderr.WriteString(err.Error() + "\n")
 		os.Exit(1)
 	}
+	root.AddCommand(serveCmd)
 
 	if err := root.Execute(); err != nil {
 		os.Exit(1)

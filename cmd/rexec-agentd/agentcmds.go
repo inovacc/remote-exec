@@ -40,13 +40,28 @@ func defaultDataDir() string {
 	return filepath.Join(base, "rexec-agentd")
 }
 
+// dataDirOf / listenOf read the root's inherited persistent flags, so
+// --data-dir and --listen are declared once (on the root) and shared.
+func dataDirOf(cmd *cobra.Command) string {
+	if v, _ := cmd.Flags().GetString("data-dir"); v != "" {
+		return v
+	}
+	return defaultDataDir()
+}
+
+func listenOf(cmd *cobra.Command) string {
+	if v, _ := cmd.Flags().GetString("listen"); v != "" {
+		return v
+	}
+	return "127.0.0.1:50000"
+}
+
 // agentCommands returns the standalone (non-serving) admin commands.
 func agentCommands() []*cobra.Command {
 	return []*cobra.Command{caInitCmd(), tokenCmd(), serviceCmd()}
 }
 
 func caInitCmd() *cobra.Command {
-	var dir string
 	var force bool
 	cmd := &cobra.Command{
 		Use:   "ca",
@@ -56,7 +71,7 @@ func caInitCmd() *cobra.Command {
 		Use:   "init",
 		Short: "Mint the agent CA and server certificate",
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			d := dataLayout{dir: dir}
+			d := dataLayout{dir: dataDirOf(cmd)}
 			if _, err := os.Stat(d.caKey()); err == nil && !force {
 				return fmt.Errorf("CA already exists at %s (use --force to overwrite)", d.caKey())
 			}
@@ -93,14 +108,13 @@ func caInitCmd() *cobra.Command {
 			return nil
 		},
 	}
-	initCmd.Flags().StringVar(&dir, "data-dir", defaultDataDir(), "agent data directory")
 	initCmd.Flags().BoolVar(&force, "force", false, "overwrite an existing CA")
 	cmd.AddCommand(initCmd)
 	return cmd
 }
 
 func tokenCmd() *cobra.Command {
-	var dir, role string
+	var role string
 	var ttl time.Duration
 	cmd := &cobra.Command{
 		Use:   "token",
@@ -110,7 +124,7 @@ func tokenCmd() *cobra.Command {
 		Use:   "new",
 		Short: "Issue a short-lived, single-use join token",
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			d := dataLayout{dir: dir}
+			d := dataLayout{dir: dataDirOf(cmd)}
 			store := token.NewFileStore(d.tokens())
 			value, err := store.Issue(role, ttl)
 			if err != nil {
@@ -123,7 +137,6 @@ func tokenCmd() *cobra.Command {
 			return nil
 		},
 	}
-	newCmd.Flags().StringVar(&dir, "data-dir", defaultDataDir(), "agent data directory")
 	newCmd.Flags().StringVar(&role, "role", "rex:reader", "role granted to the enrolling controller")
 	newCmd.Flags().DurationVar(&ttl, "ttl", 10*time.Minute, "token lifetime")
 	cmd.AddCommand(newCmd)
